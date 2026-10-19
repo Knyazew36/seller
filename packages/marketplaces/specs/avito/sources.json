@@ -1,0 +1,218 @@
+[
+  {
+    "file": "avito/accounts-hierarchy.json",
+    "title": "Иерархия Аккаунтов",
+    "url": "https://www.avito.ru/web/1/openapi/info/accounts-hierarchy",
+    "date": "2026-10-19",
+    "sha256": "4059d0546426e5439a39cdd9ece6e63040a514097e83f92196255454f839541e",
+    "bytes": 39875
+  },
+  {
+    "file": "avito/ads.json",
+    "title": "Авито Реклама",
+    "url": "https://www.avito.ru/web/1/openapi/info/ads",
+    "date": "2026-10-19",
+    "sha256": "9e7a132d5fc7a5564d93c57fc55d44a279b954714f686d105876b994cb1d50c1",
+    "bytes": 183454
+  },
+  {
+    "file": "avito/auction.json",
+    "title": "CPA-аукцион",
+    "url": "https://www.avito.ru/web/1/openapi/info/auction",
+    "date": "2026-10-19",
+    "sha256": "84fcad09867792f2142cf1674a11eb6a0de8eab6980062fa20d7935206b026e7",
+    "bytes": 14307
+  },
+  {
+    "file": "avito/auth.json",
+    "title": "Авторизация",
+    "url": "https://www.avito.ru/web/1/openapi/info/auth",
+    "date": "2026-10-19",
+    "sha256": "43f32db7ad42cd1b42f989ec0d2ffd1ef2099e55bf4a1c5478930d8fa6cb6bc9",
+    "bytes": 21019
+  },
+  {
+    "file": "avito/autoload.json",
+    "title": "Автозагрузка",
+    "url": "https://www.avito.ru/web/1/openapi/info/autoload",
+    "date": "2026-10-19",
+    "sha256": "3e84a9e9999dc1b285fb72012e871740f693abc34b4c0b15b90084429f5dd008",
+    "bytes": 158482
+  },
+  {
+    "file": "avito/autostrategy.json",
+    "title": "Автостратегия",
+    "url": "https://www.avito.ru/web/1/openapi/info/autostrategy",
+    "date": "2026-10-19",
+    "sha256": "742287bf61642b634042929bfc35a5bdc7964e86589e300752e7537239593f63",
+    "bytes": 62921
+  },
+  {
+    "file": "avito/autoteka.json",
+    "title": "Автотека",
+    "url": "https://www.avito.ru/web/1/openapi/info/autoteka",
+    "date": "2026-10-19",
+    "sha256": "1704f7c316cba64a002e7ef47849988278e129449c0271eee0e69c8c70b13272",
+    "bytes": 304006
+  },
+  {
+    "file": "avito/avito-promo.json",
+    "title": "Авито Promo",
+    "url": "https://www.avito.ru/web/1/openapi/info/avito-promo",
+    "date": "2026-10-19",
+    "sha256": "550300bb6cee73c212c86ef9a8b377e0aad0452ae3d0be14186f9bfd9e4d946e",
+    "bytes": 114512
+  },
+  {
+    "file": "avito/calltracking.json",
+    "title": "CallTracking[КТ]",
+    "url": "https://www.avito.ru/web/1/openapi/info/calltracking",
+    "date": "2026-10-19",
+    "sha256": "bba5dcef92237f464c2cc6985a68a207f14a2ff19e2067f21db9894aa4429082",
+    "bytes": 13175
+  },
+  {
+    "file": "avito/cpa.json",
+    "title": "CPA Авито",
+    "url": "https://www.avito.ru/web/1/openapi/info/cpa",
+    "date": "2026-10-19",
+    "sha256": "0ce0ebdc586e08a923921ad074f9b2293c6bebe98e384c64b2d6e95fe424cc05",
+    "bytes": 57730
+  },
+  {
+    "file": "avito/cpxpromo.json",
+    "title": "Настройка цены целевого действия",
+    "url": "https://www.avito.ru/web/1/openapi/info/cpxpromo",
+    "date": "2026-10-19",
+    "sha256": "45999c5aaf4250fc44ba6ee3793d7c147df87077550933a7286c3c6a44bc607c",
+    "bytes": 27861
+  },
+  {
+    "file": "avito/delivery-sandbox.json",
+    "title": "Доставка",
+    "url": "https://www.avito.ru/web/1/openapi/info/delivery-sandbox",
+    "date": "2026-10-19",
+    "sha256": "eec548bcddce4529c18df642837f66e8e80bce0886b4ee4b133e4eccaa5b7d67",
+    "bytes": 264455
+  },
+  {
+    "file": "avito/digital-goods.json",
+    "title": "Цифровые товары",
+    "url": "https://www.avito.ru/web/1/openapi/info/digital-goods",
+    "date": "2026-10-19",
+    "sha256": "cac8d3d0819f31dfbe7274406f07aae5a48492374650b52bf32483dc6d66d5fe",
+    "bytes": 31732
+  },
+  {
+    "file": "avito/item.json",
+    "title": "Объявления",
+    "url": "https://www.avito.ru/web/1/openapi/info/item",
+    "date": "2026-10-19",
+    "sha256": "662575caae558a720f86ce45c092add6bef82baceabce14ead8314d2e9a8df95",
+    "bytes": 90285
+  },
+  {
+    "file": "avito/job.json",
+    "title": "Авито.Работа",
+    "url": "https://www.avito.ru/web/1/openapi/info/job",
+    "date": "2026-10-19",
+    "sha256": "b9bf318e0c26938a14fc2faaac3b86b7c3f4d37c215403c6d9481bc6331c8629",
+    "bytes": 313015
+  },
+  {
+    "file": "avito/messenger.json",
+    "title": "Мессенджер",
+    "url": "https://www.avito.ru/web/1/openapi/info/messenger",
+    "date": "2026-10-19",
+    "sha256": "4033f9985f897cfee280974f234b8a66d09e40387dbb15233ee119b11e43b8fa",
+    "bytes": 62079
+  },
+  {
+    "file": "avito/order-management.json",
+    "title": "Управление заказами",
+    "url": "https://www.avito.ru/web/1/openapi/info/order-management",
+    "date": "2026-10-19",
+    "sha256": "1ee5a128679ebdc84346eeaddd6951d0374cc01abb97cbb1d233bbb0c370368f",
+    "bytes": 55455
+  },
+  {
+    "file": "avito/promotion.json",
+    "title": "Продвижение",
+    "url": "https://www.avito.ru/web/1/openapi/info/promotion",
+    "date": "2026-10-19",
+    "sha256": "86a517f11ce5e1686843104d23da225ac5015c3bd94101367b2cbd88e8a79eb9",
+    "bytes": 48131
+  },
+  {
+    "file": "avito/ratings.json",
+    "title": "Рейтинги и отзывы",
+    "url": "https://www.avito.ru/web/1/openapi/info/ratings",
+    "date": "2026-10-19",
+    "sha256": "1f902c87148f3890e4f7934b8b761033af9aa459e0ab481157555a524777977e",
+    "bytes": 26151
+  },
+  {
+    "file": "avito/realty-reports.json",
+    "title": "Аналитика по недвижимости",
+    "url": "https://www.avito.ru/web/1/openapi/info/realty-reports",
+    "date": "2026-10-19",
+    "sha256": "c83170ea12be0c4a75379686a33604d7ea685d815aa21408072614b1bd68ac5b",
+    "bytes": 12408
+  },
+  {
+    "file": "avito/sbc-gateway.json",
+    "title": "Рассылка скидок и спецпредложений в мессенджере (beta-version)",
+    "url": "https://www.avito.ru/web/1/openapi/info/sbc-gateway",
+    "date": "2026-10-19",
+    "sha256": "007ab07b5498908b8870f949b3b5b59f3b903802da89da37fb563306c7e06d89",
+    "bytes": 34646
+  },
+  {
+    "file": "avito/stock-management.json",
+    "title": "Управление остатками",
+    "url": "https://www.avito.ru/web/1/openapi/info/stock-management",
+    "date": "2026-10-19",
+    "sha256": "ff40468539b64d8f543ff69812aafa56662c85d76a2152b3c8912fc846aca286",
+    "bytes": 13149
+  },
+  {
+    "file": "avito/str.json",
+    "title": "Краткосрочная аренда",
+    "url": "https://www.avito.ru/web/1/openapi/info/str",
+    "date": "2026-10-19",
+    "sha256": "0dabef81747d5b9fcb2be5de93f1cc6cea07094b955b5721773d18cfafceb348",
+    "bytes": 42383
+  },
+  {
+    "file": "avito/tariff.json",
+    "title": "Тарифы",
+    "url": "https://www.avito.ru/web/1/openapi/info/tariff",
+    "date": "2026-10-19",
+    "sha256": "b65d43884dd8ca0e9222cf5a534582a72710ab7fefb61f18974fcd21033cec12",
+    "bytes": 15020
+  },
+  {
+    "file": "avito/tariff-composition.json",
+    "title": "Тариф",
+    "url": "https://www.avito.ru/web/1/openapi/info/tariff-composition",
+    "date": "2026-10-19",
+    "sha256": "5f3a3ca7ca84e69d5e99256045b3d8c50366f267fd06d3f13244bc37eb484f0e",
+    "bytes": 6684
+  },
+  {
+    "file": "avito/trxpromo.json",
+    "title": "TrxPromo",
+    "url": "https://www.avito.ru/web/1/openapi/info/trxpromo",
+    "date": "2026-10-19",
+    "sha256": "522db168be5db3788ae873b13679a302c49e57e52b9fddf5de5248ca67a88eb7",
+    "bytes": 21928
+  },
+  {
+    "file": "avito/user.json",
+    "title": "Информация о пользователе",
+    "url": "https://www.avito.ru/web/1/openapi/info/user",
+    "date": "2026-10-19",
+    "sha256": "d001b3ec18cfc17c6af7230730fa49f615eb0885489a93a86a4c76cd70114238",
+    "bytes": 23233
+  }
+]

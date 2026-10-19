@@ -1,0 +1,16 @@
+[
+  {
+    "file": "ozon/seller.json",
+    "url": "https://docs.ozon.ru/api/seller/swagger.json",
+    "date": "2026-10-19",
+    "sha256": "ef61016684019c711e701955c34b2640695f2fdfd0adcf6eb079a6897edf7ab1",
+    "bytes": 4234557
+  },
+  {
+    "file": "ozon/performance.json",
+    "url": "https://docs.ozon.ru/api/performance/swagger.json",
+    "date": "2026-10-19",
+    "sha256": "c0a023d3b3b221eba166aede9837754e573ab788303b6ae38841955db8e3b1c0",
+    "bytes": 308372
+  }
+]

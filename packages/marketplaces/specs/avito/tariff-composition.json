@@ -1,0 +1,272 @@
+{
+  "components": {
+    "responses": {
+      "400": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BadRequestError"
+            }
+          }
+        },
+        "description": "Bad Request"
+      },
+      "401": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UnauthenticatedError"
+            }
+          }
+        },
+        "description": "Unauthenticated"
+      },
+      "403": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ForbiddenError"
+            }
+          }
+        },
+        "description": "Forbidden"
+      },
+      "500": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/InternalError"
+            }
+          }
+        },
+        "description": "Internal error"
+      }
+    },
+    "schemas": {
+      "BadRequestError": {
+        "properties": {
+          "bad-request": {
+            "$ref": "#/components/schemas/ErrorMessage"
+          }
+        },
+        "required": [
+          "bad-request"
+        ],
+        "type": "object"
+      },
+      "ErrorMessage": {
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "ForbiddenError": {
+        "properties": {
+          "forbidden": {
+            "$ref": "#/components/schemas/ErrorMessage"
+          }
+        },
+        "required": [
+          "forbidden"
+        ],
+        "type": "object"
+      },
+      "GetTariffInfoOut": {
+        "properties": {
+          "success": {
+            "$ref": "#/components/schemas/GetTariffInfoOut_success"
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "type": "object"
+      },
+      "GetTariffInfoOut_location": {
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "parentId": {
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "GetTariffInfoOut_package": {
+        "properties": {
+          "commitSize": {
+            "description": "Размер пакета с учётом плана пользователя",
+            "type": "integer"
+          },
+          "id": {
+            "description": "Идентификатор пакета",
+            "type": "integer"
+          },
+          "limit": {
+            "description": "Размер (лимит) пакета",
+            "type": "integer"
+          },
+          "locations": {
+            "description": "Локации пакета",
+            "items": {
+              "$ref": "#/components/schemas/GetTariffInfoOut_location"
+            },
+            "type": "array"
+          },
+          "microCategoryIds": {
+            "description": "Микрокатегории пакета",
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "size": {
+            "description": "Остаток размещений в пакете",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "microCategoryIds",
+          "locations",
+          "size",
+          "commitSize",
+          "limit"
+        ],
+        "type": "object"
+      },
+      "GetTariffInfoOut_success": {
+        "properties": {
+          "levelId": {
+            "description": "Уровень тарифа",
+            "nullable": true,
+            "type": "integer"
+          },
+          "packages": {
+            "description": "Пакеты размещений (LF) тарифа",
+            "items": {
+              "$ref": "#/components/schemas/GetTariffInfoOut_package"
+            },
+            "type": "array"
+          },
+          "status": {
+            "description": "Статус тарифа",
+            "enum": [
+              "active",
+              "inactive",
+              "no_tariff"
+            ],
+            "type": "string"
+          },
+          "verticalId": {
+            "description": "Вертикаль тарифа",
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "InternalError": {
+        "properties": {
+          "internal-error": {
+            "$ref": "#/components/schemas/ErrorMessage"
+          }
+        },
+        "required": [
+          "internal-error"
+        ],
+        "type": "object"
+      },
+      "UnauthenticatedError": {
+        "properties": {
+          "unauthenticated": {
+            "$ref": "#/components/schemas/ErrorMessage"
+          }
+        },
+        "required": [
+          "unauthenticated"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "ClientCredentials": {
+        "description": "Это API использует OAuth 2 с механизмом client_credentials. Используйте его для доступа к возможностям своей личной учетной записи. [Подробнее](#tag/Access)",
+        "flows": {
+          "clientCredentials": {
+            "scopes": {},
+            "tokenUrl": "https://api.avito.ru/token"
+          }
+        },
+        "type": "oauth2"
+      }
+    }
+  },
+  "info": {
+    "title": "Тариф",
+    "version": "1"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/1/partner/tariff/info": {
+      "get": {
+        "description": "Возвращает информацию о текущем тарифе пользователя, включая остатки размещений\nпо пакетам тарифа (LF).\n\n**Данный метод доступен только пользователям с платным тарифом (Профи или Лидер) в недвижимости**\n",
+        "operationId": "GetTariffInfo",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetTariffInfoOut"
+                }
+              }
+            },
+            "description": "Успешный ответ"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "security": [
+          {
+            "ClientCredentials": []
+          }
+        ],
+        "summary": "Информация о текущем тарифе пользователя"
+      },
+      "x-format": "avito:api@v3"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.avito.ru/"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Тариф"
+    }
+  ]
+}

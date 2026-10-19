@@ -1,0 +1,39 @@
+// Эмодзи-префикс по сущности — для быстрого визуального грепа логов по домену.
+// Статусные эмодзи (⏰✅❌⚠️ и т.п.) остаются рядом, это разные оси: сущность vs исход.
+export const ENTITY_EMOJI = {
+  auth: '🔐',
+  user: '👤',
+  organization: '🏢',
+  joinRequest: '🙋',
+  invite: '📨',
+  mail: '✉️',
+  upload: '📁',
+  notifications: '🔔',
+  auditLog: '📝',
+  chat: '💬',
+  marketplaceAccount: '🛒',
+} as const;
+
+const URL_SEGMENT_EMOJI: Record<string, string> = {
+  auth: ENTITY_EMOJI.auth,
+  user: ENTITY_EMOJI.user,
+  organization: ENTITY_EMOJI.organization,
+  'join-request': ENTITY_EMOJI.joinRequest,
+  invite: ENTITY_EMOJI.invite,
+  upload: ENTITY_EMOJI.upload,
+  notifications: ENTITY_EMOJI.notifications,
+  'audit-log': ENTITY_EMOJI.auditLog,
+  'chat-submission': ENTITY_EMOJI.chat,
+  'marketplace-account': ENTITY_EMOJI.marketplaceAccount,
+};
+
+const UNKNOWN_ENTITY_EMOJI = '⚙️';
+
+/** Эмодзи сущности по первому сегменту пути после /api/ (например /api/invite/123 → 📨). */
+export function resolveEntityEmoji(url: string): string {
+  const segment = url
+    .replace(/^\/?api\/?/, '')
+    .split('/')[0]
+    ?.split('?')[0];
+  return (segment && URL_SEGMENT_EMOJI[segment]) || UNKNOWN_ENTITY_EMOJI;
+}

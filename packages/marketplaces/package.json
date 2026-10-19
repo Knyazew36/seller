@@ -1,0 +1,87 @@
+{
+  "name": "@app/marketplaces",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Переиспользуемые клиенты API продавца Wildberries, Ozon и Avito по официальным OpenAPI-спекам",
+  "license": "UNLICENSED",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./shared": {
+      "types": "./dist/shared/index.d.ts",
+      "default": "./dist/shared/index.js"
+    },
+    "./wildberries": {
+      "types": "./dist/wildberries/index.d.ts",
+      "default": "./dist/wildberries/index.js"
+    },
+    "./ozon": {
+      "types": "./dist/ozon/index.d.ts",
+      "default": "./dist/ozon/index.js"
+    },
+    "./avito": {
+      "types": "./dist/avito/index.d.ts",
+      "default": "./dist/avito/index.js"
+    },
+    "./nest": {
+      "types": "./dist/nest/index.d.ts",
+      "default": "./dist/nest/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "shared": [
+        "dist/shared/index.d.ts"
+      ],
+      "wildberries": [
+        "dist/wildberries/index.d.ts"
+      ],
+      "ozon": [
+        "dist/ozon/index.d.ts"
+      ],
+      "avito": [
+        "dist/avito/index.d.ts"
+      ],
+      "nest": [
+        "dist/nest/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "specs",
+    "README.md"
+  ],
+  "scripts": {
+    "specs:fetch:wb": "node scripts/fetch-wb-specs.mjs",
+    "generate": "node scripts/generate.mjs",
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "check-types": "tsc -p tsconfig.json --noEmit",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": ">=10"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/common": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@nestjs/common": "^12.0.1",
+    "@types/node": "^22.10.7",
+    "openapi-typescript": "7.13.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "typescript": "^6",
+    "yaml": "2.9.1"
+  }
+}

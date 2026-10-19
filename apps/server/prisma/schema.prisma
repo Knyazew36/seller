@@ -1,0 +1,398 @@
+// Схема БД шаблона: пользователи, организации, приглашения, уведомления, журнал действий.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+//  Пользователи и доступ
+// ============================================================
+
+/// Аккаунт. Один человек = одна строка. Вход по email+паролю и/или через мессенджеры —
+/// способы не взаимоисключающие.
+model User {
+  id              Int     @id @default(autoincrement())
+  name            String? /// имя
+  lastName        String? /// фамилия
+  avatarPath      String? /// путь к файлу аватара относительно upload root (avatars/uuid.ext); null — аватар не задан
+  phone           String? /// телефон, опционально
+  isPlatformAdmin Boolean @default(false) /// платформенный админ: ops-доступ
+
+  // --- email-вход ---
+  email         String? @unique
+  passwordHash  String? /// bcrypt; в приложении глобально скрыт через omit, включается точечно
+  emailVerified Boolean @default(false) /// без подтверждения почты токен не выдаём
+  tokenVersion  Int     @default(0) /// растёт при смене/сбросе пароля; JWT с другой версией отклоняется
+
+  // --- vk-канал мессенджера ---
+  vkId   String? @unique /// id пользователя ВКонтакте
+  vkData Json? /// сырой профиль из VK на момент последнего входа или апдейта бота
+
+  // --- telegram-канал мессенджера ---
+  telegramId   String? @unique
+  telegramData Json?
+
+  // --- max-канал мессенджера ---
+  maxId   String? @unique
+  maxData Json?
+
+  /// Служебные флаги диалога с ботами мессенджеров (ключи с префиксом провайдера,
+  /// например vkDialogStartedAt/ClosedAt) и прочие некритичные пометки.
+  data Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  verificationCodes  VerificationCode[]
+  ownedOrganizations Organization[]           @relation("OrganizationOwner")
+  orgMemberships     OrganizationMembership[]
+  joinRequests       JoinRequest[]
+
+  notifications        Notification[]
+  notificationSettings NotificationSetting[]
+  auditLogs            AuditLog[]
+
+  @@index([telegramId])
+  @@index([maxId])
+  @@index([vkId])
+}
+
+/// Назначение одноразового кода из письма.
+enum VerificationCodeType {
+  EMAIL_VERIFY /// подтверждение почты при регистрации
+  PASSWORD_RESET /// сброс пароля
+}
+
+/// 6-значный код, отправленный на email. Хранится хешем.
+/// Активен только последний невыданный код типа.
+model VerificationCode {
+  id        Int                  @id @default(autoincrement())
+  type      VerificationCodeType
+  codeHash  String /// sha256(code) — открытый код в БД не лежит
+  attempts  Int                  @default(0) /// счётчик неверных попыток; при превышении код сгорает
+  expiresAt DateTime /// TTL ~15 минут
+  usedAt    DateTime? /// проставляется при успешной проверке или при выпуске нового кода того же типа
+  createdAt DateTime             @default(now())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+// ============================================================
+//  Организации
+// ============================================================
+
+model Organization {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  active    Boolean  @default(true)
+
+  name String
+
+  /// Произвольные настройки организации (форма — OrganizationSettingsDto), расширяются в проекте.
+  settings Json @default("{}")
+
+  /// Текущий владелец организации.
+  /// При создании организации необходимо также создать
+  /// OrganizationMembership с role = OWNER для этого пользователя.
+  ownerUserId Int
+  owner       User @relation("OrganizationOwner", fields: [ownerUserId], references: [id])
+
+  memberships  OrganizationMembership[]
+  invites      Invite[]
+  joinRequests JoinRequest[]
+
+  notifications        Notification[]
+  notificationSettings NotificationSetting[]
+  auditLogs            AuditLog[]
+
+  marketplaceAccounts MarketplaceAccount[]
+}
+
+/// Роль пользователя в организации. Иерархия: OWNER > ADMIN > MEMBER (см. ROLE_RANK).
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+/// Участие пользователя в организации.
+/// Один пользователь может состоять в нескольких организациях,
+/// но только один раз в каждой конкретной организации.
+model OrganizationMembership {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  role OrgRole
+
+  /// Один пользователь — одна роль в организации.
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+// ============================================================
+//  Приглашения в организацию
+// ============================================================
+
+/// Ссылка-приглашение в организацию.
+/// Переход по ссылке создаёт JoinRequest(PENDING) — членство появляется
+/// только после одобрения владельцем (см. JoinRequest).
+model Invite {
+  id             Int          @id @default(autoincrement())
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  token String @unique /// длинный непубличный токен для URL
+
+  /// Автор приглашения. FK намеренно не создаётся,
+  /// чтобы не тянуть каскады на User.
+  createdByUserId Int
+
+  expiresAt DateTime? /// null = бессрочно
+  usedCount Int       @default(0) /// сколько раз по приглашению подключились (заявка одобрена)
+  createdAt DateTime  @default(now())
+
+  joinRequests JoinRequest[]
+
+  @@index([organizationId])
+  @@index([createdByUserId])
+}
+
+/// Статус заявки на вступление в организацию по приглашению.
+enum JoinRequestStatus {
+  PENDING /// ждёт решения владельца
+  APPROVED /// владелец одобрил — заявитель стал участником (OrganizationMembership создан)
+  REJECTED /// владелец отклонил
+  CANCELLED /// заявитель отменил сам, пока заявка ждала решения
+}
+
+/// Заявка на вступление в организацию по ссылке-приглашению.
+/// В отличие от прямого вступления в открытую организацию (`Organization.join`),
+/// решение по заявке принимает владелец: approve создаёт `OrganizationMembership`,
+/// reject/cancel — не создаёт.
+model JoinRequest {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Приглашение, по которому пришла заявка — null, если ссылку успели отозвать позже.
+  inviteId Int?
+  invite   Invite? @relation(fields: [inviteId], references: [id], onDelete: SetNull)
+
+  status JoinRequestStatus @default(PENDING)
+
+  decidedAt       DateTime? /// когда approve/reject/cancel
+  /// Кто принял решение (владелец либо сам заявитель при cancel).
+  /// FK намеренно не создаётся, как в Invite.createdByUserId.
+  decidedByUserId Int?
+
+  /// Одну активную (PENDING) заявку на пару организация+пользователь проверяем в сервисе:
+  /// частичный уникальный индекс Prisma не поддерживает без raw SQL.
+  @@index([organizationId, status])
+  @@index([userId, status])
+}
+
+// ============================================================
+//  Обратная связь с сайта
+// ============================================================
+
+/// Обращение из публичного чата на сайте (без авторизации). Контакт — телефон и/или email,
+/// хотя бы одно поле обязательно (проверяется в DTO). Картинки — до 5 шт, relative-пути в filePaths.
+model ChatSubmission {
+  id        Int      @id @default(autoincrement())
+  message   String
+  phone     String?
+  email     String?
+  filePaths String[]
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// ============================================================
+//  Уведомления и мессенджеры
+// ============================================================
+
+/// Канал доставки уведомления.
+enum NotificationChannel {
+  EMAIL
+  TELEGRAM
+  MAX
+  VK
+  IN_APP
+}
+
+/// Частота дайджеста для канала/события (на будущее — батчинг вместо INSTANT).
+enum NotificationDigestFrequency {
+  INSTANT
+  DAILY
+  WEEKLY
+}
+
+/// Статус доставки конкретного уведомления.
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+/// Настройка канала для события уведомления.
+/// userId = null — дефолт на уровне организации; userId задан — персональный override.
+model NotificationSetting {
+  id Int @id @default(autoincrement())
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventType String /// ключ события из кода (event-registry), не enum
+  channel   NotificationChannel
+  enabled   Boolean             @default(true)
+
+  digestFrequency  NotificationDigestFrequency @default(INSTANT)
+  quietHoursStart  String? /// "HH:mm" начало тихих часов
+  quietHoursEnd    String? /// "HH:mm" конец тихих часов
+  daysOfWeek       Int[] /// 0..6 (0 — воскресенье, как Date.getDay()), пусто = каждый день
+  notificationTime String? /// фиксированное время отправки дайджеста, "HH:mm"
+  config           Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, userId, eventType, channel])
+  @@index([organizationId, eventType])
+  @@index([userId, eventType])
+}
+
+/// Лента и журнал доставки уведомления конкретному пользователю по конкретному каналу.
+model Notification {
+  id Int @id @default(autoincrement())
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventType String
+  channel   NotificationChannel
+
+  title   String
+  body    String
+  payload Json?
+
+  status NotificationStatus @default(PENDING)
+  readAt DateTime?
+  sentAt DateTime?
+  error  String? /// текст последней ошибки отправки, провайдер-агностичный
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, userId])
+  @@index([userId, status])
+  @@index([userId, readAt])
+  @@index([createdAt])
+}
+
+// ============================================================
+//  Журнал действий
+// ============================================================
+
+/// Журнал мутаций в организации: кто, что и над чем сделал. Пишется AuditLogInterceptor.
+model AuditLog {
+  id Int @id @default(autoincrement())
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId   Int?
+  user     User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userName String? /// снимок имени на момент действия — переживает удаление User
+
+  action   String /// "<entity>.<verb>", напр. "invite.create"
+  entity   String /// сегмент маршрута, напр. "invite"
+  entityId Int?
+  payload  Json? /// тело запроса, санитизировано (без password/token-полей)
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, entity, entityId])
+  @@index([userId])
+}
+
+// ============================================================
+//  Кабинеты площадок
+// ============================================================
+
+/// Площадка, к API которой подключён кабинет.
+enum Marketplace {
+  WILDBERRIES
+  OZON
+  AVITO
+}
+
+/// Состояние подключения по последней проверке ключа.
+enum MarketplaceAccountStatus {
+  ACTIVE /// ключ принят площадкой
+  ERROR /// ключ отклонён (истёк, отозван, не хватает прав) — текст в statusMessage
+}
+
+/// Кабинет продавца на площадке (обычно одно юрлицо), подключённый к организации по ключу API.
+/// Ключ хранится только зашифрованным (credentials) и наружу не отдаётся.
+model MarketplaceAccount {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  marketplace Marketplace
+  name        String /// название для людей, например ООО «Ромашка»
+
+  /// ID кабинета на площадке: WB — ID продавца из токена, Ozon — Client-Id, Avito — client_id.
+  /// По нему не даём подключить один кабинет в организацию дважды.
+  externalId String
+
+  /// Учётные данные — JSON, зашифрованный AES-256-GCM ключом MARKETPLACE_CREDENTIALS_KEY
+  credentials            String
+  /// Отпечаток учётных данных (sha256) — понять, что ключ сменился, не расшифровывая
+  credentialsFingerprint String
+
+  status        MarketplaceAccountStatus @default(ACTIVE)
+  statusMessage String? /// почему ERROR — текст для продавца
+  checkedAt     DateTime? /// последняя проверка ключа
+  keyExpiresAt  DateTime? /// когда истекает ключ, если площадка это сообщает
+  /// Что вернула проверка: категории токена WB, роли ключа Ozon. Без секретов.
+  keyInfo       Json?
+
+  /// Кто подключил. FK намеренно не создаётся, как в Invite.createdByUserId.
+  createdByUserId Int?
+
+  @@unique([organizationId, marketplace, externalId])
+}
