@@ -24,6 +24,13 @@ export class CreateSupportOperatorMessageDto {
   @IsUUID()
   public clientMessageId?: string
 
+  @ApiPropertyOptional({ description: 'id сообщения этого диалога, на которое отвечаем' })
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  public replyToId?: number
+
   @ApiPropertyOptional({ default: false, description: 'Заметка для операторов, клиент её не увидит' })
   @Transform(toBoolean)
   @IsOptional()

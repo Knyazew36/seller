@@ -1,7 +1,7 @@
 # @app/support-chat-react
 
 Виджет посетителя и инбокс оператора поверх `@app/support-chat-client`. Свой CSS на переменных `--scw-*`,
-UI-кит приложения не нужен.
+UI-кит приложения и Tailwind у проекта не нужны.
 
 ```tsx
 import { SupportInbox, SupportWidget } from '@app/support-chat-react'
@@ -53,3 +53,16 @@ import '@app/support-chat-react/styles.css'
 | `--scw-note-bubble`, `--scw-note-text` | внутренние заметки операторов |
 | `--scw-danger`, `--scw-success` | ошибки, успех |
 | `--scw-offset-bottom`, `--scw-offset-side` | отступ плавающей кнопки от края экрана |
+
+## Разработка стилей
+
+Разметка — на Tailwind v4 с префиксом `scw:` (`scw:flex`, `scw:hover:bg-surface`), точка входа — `src/styles.css`.
+`yarn build` собирает из неё `dist/styles.css` (`yarn dev` — то же в watch), проект подключает только готовый файл.
+
+- Префикс и утилиты без `@layer` — чтобы классы и стили чужого сайта не задевали чат, и наоборот.
+- Цвета в разметке — только токены темы (`scw:bg-surface`, `scw:text-muted`), они смотрят на `--scw-*`. Хексы — лишь
+  там, где цвет не должен зависеть от темы проекта.
+- Размеры в px (`--spacing: 4px`), не rem: у чужого сайта может быть любой размер шрифта у `html`.
+- Две утилиты одного свойства на одном элементе (`scw:bg-action` и `scw:bg-transparent`) не смешиваем — победит не
+  последняя в `className`, а последняя в CSS. Варианты кнопок — целиком, см. `src/ui.ts`.
+

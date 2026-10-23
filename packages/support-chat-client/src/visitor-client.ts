@@ -12,7 +12,7 @@ import { SupportApiError, SupportHttp } from './http'
 import { createSupportSocket, socketUrlFromApi, type SupportSocket, watchWake } from './socket'
 import { StateStore } from './state-store'
 import { browserStorage, type SupportStorage } from './storage'
-import { SupportTimeline } from './timeline'
+import { SupportTimeline, toSupportReply } from './timeline'
 
 /** Пользователь внешнего сайта, подписанный на его бэкенде (userHash = HMAC-SHA256(secret, userId)). */
 export interface SupportVisitorIdentity {
@@ -144,9 +144,15 @@ export class SupportVisitorClient {
 
   // ── Действия ───────────────────────────────────────────────────────────────
 
-  public send(text: string, files: File[] = []): void {
+  /** replyTo — сообщение ленты, на которое отвечаем. */
+  public send(text: string, files: File[] = [], options: { replyTo?: SupportMessage | null } = {}): void {
     if (!text.trim() && files.length === 0) return
-    this.timeline.send(text, files.slice(0, SUPPORT_LIMITS.attachmentsMax))
+    this.timeline.send(
+      text,
+      files.slice(0, SUPPORT_LIMITS.attachmentsMax),
+      {},
+      options.replyTo ? toSupportReply(options.replyTo) : null,
+    )
     void this.start()
   }
 

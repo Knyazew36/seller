@@ -32,7 +32,7 @@ export const CloseIcon = (props: SVGProps<SVGSVGElement>) => (
 
 export const SendIcon = (props: SVGProps<SVGSVGElement>) => (
   <Icon {...props}>
-    <path d='M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z' />
+    <path d='M12 19V5M5 12l7-7 7 7' />
   </Icon>
 )
 
@@ -82,12 +82,6 @@ export const ArrowLeftIcon = (props: SVGProps<SVGSVGElement>) => (
   </Icon>
 )
 
-export const StarIcon = (props: SVGProps<SVGSVGElement>) => (
-  <Icon {...props}>
-    <path d='m12 3 2.8 5.6 6.2.9-4.5 4.4 1 6.1L12 17.1 6.5 20l1-6.1L3 9.5l6.2-.9L12 3Z' />
-  </Icon>
-)
-
 export const HeadsetIcon = (props: SVGProps<SVGSVGElement>) => (
   <Icon {...props}>
     <path d='M3 14v-2a9 9 0 0 1 18 0v2' />
@@ -124,5 +118,12 @@ export const ChevronRightIcon = (props: SVGProps<SVGSVGElement>) => (
 export const ExternalLinkIcon = (props: SVGProps<SVGSVGElement>) => (
   <Icon {...props}>
     <path d='M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
+  </Icon>
+)
+
+export const ReplyIcon = (props: SVGProps<SVGSVGElement>) => (
+  <Icon {...props}>
+    <path d='M9 14 4 9l5-5' />
+    <path d='M4 9h10.5a5.5 5.5 0 0 1 0 11H11' />
   </Icon>
 )

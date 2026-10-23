@@ -3,6 +3,7 @@ import {
   type SupportEvent,
   SupportEvents,
   type SupportMessageRecord,
+  type SupportMessageReplyRecord,
   type SupportOperator,
   SupportOperatorService,
   SupportStore,
@@ -42,6 +43,8 @@ type TopicAction = (typeof ACTIONS)[number];
 /** Сообщение в теме, начатое так, — заметка для коллег, клиенту не уходит. */
 const NOTE_PREFIX = '//';
 const TOPIC_TITLE_MAX = 128;
+/** Сколько текста оригинала показать, если ответить в Telegram нативно не на что. */
+const QUOTE_MAX = 80;
 const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
 
 /**
@@ -162,14 +165,21 @@ export class SupportTelegramBridge
       if (file) files.push(file);
       if (!text && files.length === 0) return;
 
-      await this.operators.createMessage(
+      const replyToId = await this.replyTarget(message);
+      const created = await this.operators.createMessage(
         operator,
-        { conversationId: topic.conversationId, text, isInternalNote },
+        {
+          conversationId: topic.conversationId,
+          text,
+          isInternalNote,
+          replyToId: replyToId ?? undefined,
+        },
         files,
         'TELEGRAM',
       );
+      await this.link(message.message_id, created.id);
       this.logger.log(
-        `Ответ из Telegram conversationId=${topic.conversationId} operatorId=${operator.id}${isInternalNote ? ' заметка' : ''}`,
+        `Ответ из Telegram conversationId=${topic.conversationId} operatorId=${operator.id}${isInternalNote ? ' заметка' : ''}${replyToId ? ` replyToId=${replyToId}` : ''}`,
       );
     } catch (error) {
       this.logger.error(
@@ -365,24 +375,59 @@ export class SupportTelegramBridge
     topic: SupportTelegramTopic,
     message: SupportMessageRecord,
   ): Promise<void> {
-    const text = this.formatMessage(message);
+    // Ответ — нативным reply на копию оригинала в теме; копии нет (старое сообщение) — цитатой в тексте
+    const replyTo = message.replyTo
+      ? await this.linkedTgMessageId(message.replyTo.id)
+      : null;
+    const quote =
+      message.replyTo && !replyTo ? this.quoteLine(message.replyTo) : null;
+    const text = [quote, this.formatMessage(message)]
+      .filter(Boolean)
+      .join('\n');
+    const replyParameters = replyTo
+      ? {
+          reply_parameters: {
+            message_id: replyTo,
+            allow_sending_without_reply: true,
+          },
+        }
+      : {};
+
     const [first, ...rest] = message.attachments;
     if (!first) {
-      if (message.text) await this.send(topic, text);
+      if (!message.text) return;
+      const sent = await this.bot!.api.sendMessage(topic.chatId, text, {
+        message_thread_id: topic.threadId,
+        ...replyParameters,
+      });
+      await this.link(sent.message_id, message.id);
       return;
     }
 
-    // Подпись — к первой картинке, остальные следом без подписи
-    for (const attachment of [first, ...rest]) {
-      await this.bot!.api.sendPhoto(
+    const source = (attachmentPath: string) => ({
+      source: path.join(this.uploads.uploadRoot, attachmentPath),
+    });
+    if (!rest.length) {
+      const sent = await this.bot!.api.sendPhoto(
         topic.chatId,
-        { source: path.join(this.uploads.uploadRoot, attachment.path) },
-        {
-          message_thread_id: topic.threadId,
-          caption: attachment === first ? text : undefined,
-        },
+        source(first.path),
+        { message_thread_id: topic.threadId, caption: text, ...replyParameters },
       );
+      await this.link(sent.message_id, message.id);
+      return;
     }
+
+    // Несколько картинок — одним альбомом, как их отправили; подпись у альбома — на первой
+    const sent = await this.bot!.api.sendMediaGroup(
+      topic.chatId,
+      [first, ...rest].map((attachment, index) => ({
+        type: 'photo' as const,
+        media: source(attachment.path),
+        ...(index === 0 ? { caption: text } : {}),
+      })),
+      { message_thread_id: topic.threadId, ...replyParameters },
+    );
+    for (const item of sent) await this.link(item.message_id, message.id);
   }
 
   /** Закрытый диалог — закрытая тема; переоткрыли — тема снова открыта. */
@@ -449,6 +494,68 @@ export class SupportTelegramBridge
     if (message.author === 'CONTACT') return `💬 ${message.text}`;
     const prefix = message.isInternalNote ? '📝 Заметка' : '↩️ Ответ';
     return `${prefix} · ${this.authorLabel(message)} (из панели):\n${message.text}`;
+  }
+
+  private quoteLine(reply: SupportMessageReplyRecord): string {
+    const source = reply.deletedAt
+      ? 'сообщение удалено'
+      : reply.text || (reply.attachmentsCount ? 'фото' : '');
+    const short =
+      source.length > QUOTE_MAX ? `${source.slice(0, QUOTE_MAX)}…` : source;
+    return `↩️ В ответ на «${short}»`;
+  }
+
+  /**
+   * На какое сообщение ленты ответили в теме. Telegram помечает каждое сообщение темы ответом
+   * на её заголовок — это не настоящий ответ, такие отбрасываем.
+   */
+  private async replyTarget(message: Message): Promise<number | null> {
+    const replied =
+      'reply_to_message' in message ? message.reply_to_message : undefined;
+    if (
+      !replied ||
+      ('message_thread_id' in message &&
+        replied.message_id === message.message_thread_id)
+    ) {
+      return null;
+    }
+    const row = await this.prisma.supportTelegramMessage.findUnique({
+      where: {
+        chatId_tgMessageId: {
+          chatId: this.chatId!,
+          tgMessageId: replied.message_id,
+        },
+      },
+      select: { messageId: true },
+    });
+    if (!row) {
+      this.logger.debug(
+        `Ответ в теме на сообщение без копии в ленте tgMessageId=${replied.message_id}`,
+      );
+    }
+    return row?.messageId ?? null;
+  }
+
+  private async linkedTgMessageId(messageId: number): Promise<number | null> {
+    const row = await this.prisma.supportTelegramMessage.findFirst({
+      where: { chatId: this.chatId!, messageId },
+      orderBy: { tgMessageId: 'asc' },
+      select: { tgMessageId: true },
+    });
+    return row?.tgMessageId ?? null;
+  }
+
+  /** Связь не критична: без неё ответ просто уйдёт без нативного reply. */
+  private async link(tgMessageId: number, messageId: number): Promise<void> {
+    try {
+      await this.prisma.supportTelegramMessage.create({
+        data: { chatId: this.chatId!, tgMessageId, messageId },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Не удалось связать tgMessageId=${tgMessageId} с messageId=${messageId}: ${error instanceof Error ? error.message : error}`,
+      );
+    }
   }
 
   private authorLabel(message: SupportMessageRecord): string {

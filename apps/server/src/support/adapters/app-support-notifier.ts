@@ -12,6 +12,7 @@ import { User } from '@/generated/prisma/client';
 import { type MessengerButton, MessengerRegistry } from '@/messengers';
 
 const PREVIEW_LENGTH = 300;
+const QUOTE_LENGTH = 80;
 
 /**
  * Оповещения чата через мессенджеры проекта: операторам (платформенным админам) — о новом обращении,
@@ -89,7 +90,8 @@ export class AppSupportNotifier extends SupportNotifier {
     if (!user) return;
 
     const text = [
-      `💬 Поддержка ответила${message.authorName ? ` (${message.authorName})` : ''}:`,
+      // Без имени оператора — клиент и в чате видит просто «Оператор»
+      '💬 Поддержка ответила:',
       this.preview(message),
     ].join('\n');
     const sent = await this.sendToUsers([user], text, [
@@ -139,11 +141,23 @@ export class AppSupportNotifier extends SupportNotifier {
     const files = message.attachments.length
       ? `📎 Вложений: ${message.attachments.length}`
       : '';
-    const text =
-      message.text.length > PREVIEW_LENGTH
-        ? `${message.text.slice(0, PREVIEW_LENGTH)}…`
-        : message.text;
-    return [text, files].filter(Boolean).join('\n');
+    return [this.quote(message), this.cut(message.text, PREVIEW_LENGTH), files]
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  /** В мессенджере нет ленты чата — на что ответили, показываем строкой над текстом. */
+  private quote(message: SupportMessageRecord): string {
+    const reply = message.replyTo;
+    if (!reply) return '';
+    const source = reply.deletedAt
+      ? 'сообщение удалено'
+      : reply.text || (reply.attachmentsCount ? 'фото' : '');
+    return `↩️ В ответ на «${this.cut(source, QUOTE_LENGTH)}»`;
+  }
+
+  private cut(text: string, max: number): string {
+    return text.length > max ? `${text.slice(0, max)}…` : text;
   }
 
   private frontendUrl(pathname: string): string | null {

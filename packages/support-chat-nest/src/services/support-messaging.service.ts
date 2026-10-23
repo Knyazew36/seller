@@ -100,6 +100,7 @@ export class SupportMessagingService {
           text,
           isInternalNote: false,
           clientMessageId: null,
+          replyToId: null,
           channel: conversation.sourceChannel,
         },
         effects: {},

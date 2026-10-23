@@ -212,7 +212,8 @@
     @apply border-border outline-ring/50;
   }
   html {
-    @apply font-sans;
+    /* Фон и на html: при overscroll и пока body ниже экрана не видно белых полос */
+    @apply bg-background font-sans;
     font-feature-settings: 'cv11', 'ss01';
   }
   body {

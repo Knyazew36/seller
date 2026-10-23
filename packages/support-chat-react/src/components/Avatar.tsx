@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from 'react'
 
+import { cx } from '../cx'
 import { initials } from '../format'
 
 /**
@@ -40,13 +41,18 @@ export const Avatar = ({ name, src, icon, size = 'md', className }: AvatarProps)
 
   return (
     <span
-      className={`scw-avatar scw-avatar--${size}${className ? ` ${className}` : ''}`}
+      className={cx(
+        'scw:inline-flex scw:flex-none scw:select-none scw:items-center scw:justify-center scw:overflow-hidden scw:rounded-full scw:font-bold scw:tracking-[0.02em]',
+        size === 'sm' ? 'scw:size-7 scw:text-2xs' : 'scw:size-10 scw:text-base',
+        className,
+      )}
       style={{ background, color }}
       title={name}
       aria-hidden
     >
       {src && !broken ? (
         <img
+          className='scw:size-full scw:object-cover'
           src={src}
           alt=''
           onError={() => setBroken(true)}

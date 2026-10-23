@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom'
 
 import { type TouchEvent, useEffect, useRef } from 'react'
 
+import { cx } from '../cx'
 import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, ExternalLinkIcon } from '../icons'
 import type { SupportLocale } from '../locale'
 
@@ -18,6 +19,12 @@ export interface LightboxProps {
   onClose: () => void
   locale: SupportLocale
 }
+
+const roundButton =
+  'scw:inline-flex scw:items-center scw:justify-center scw:rounded-full scw:bg-white/8 scw:text-white scw:transition-colors scw:hover:bg-white/20'
+
+// На телефоне листают свайпом — стрелки не заслоняют картинку
+const navButton = cx(roundButton, 'scw:absolute scw:top-1/2 scw:size-12 scw:-translate-y-1/2 scw:max-[640px]:hidden')
 
 /** Свайп короче — это не листание, а случайное движение пальца. */
 const SWIPE_MIN_PX = 50
@@ -77,7 +84,7 @@ export const Lightbox = ({ items, index, onIndexChange, onClose, locale }: Light
 
   return createPortal(
     <div
-      className='scw-root scw-lightbox'
+      className='scw-root scw:fixed scw:inset-0 scw:z-1000 scw:flex scw:animate-fade scw:touch-pan-y scw:items-center scw:justify-center scw:bg-[rgba(10,12,14,0.92)] scw:px-18 scw:py-14 scw:text-white scw:max-[640px]:px-2'
       role='dialog'
       aria-modal
       aria-label={item.name}
@@ -85,12 +92,12 @@ export const Lightbox = ({ items, index, onIndexChange, onClose, locale }: Light
       onTouchStart={event => (touchX.current = event.touches[0]!.clientX)}
       onTouchEnd={onTouchEnd}
     >
-      <div className='scw-lightbox__bar'>
-        <span className='scw-lightbox__counter'>
+      <div className='scw:absolute scw:inset-x-0 scw:top-0 scw:flex scw:items-center scw:gap-1 scw:py-2.5 scw:pr-3 scw:pl-5'>
+        <span className='scw:flex-1 scw:text-base scw:opacity-80'>
           {items.length > 1 && `${index + 1} ${locale.galleryOf} ${items.length}`}
         </span>
         <a
-          className='scw-lightbox__button'
+          className={cx(roundButton, 'scw:size-10')}
           href={item.url}
           target='_blank'
           rel='noreferrer'
@@ -102,7 +109,7 @@ export const Lightbox = ({ items, index, onIndexChange, onClose, locale }: Light
         <button
           ref={closeRef}
           type='button'
-          className='scw-lightbox__button'
+          className={cx(roundButton, 'scw:size-10')}
           aria-label={locale.galleryClose}
           title={locale.galleryClose}
           onClick={onClose}
@@ -114,16 +121,19 @@ export const Lightbox = ({ items, index, onIndexChange, onClose, locale }: Light
       {hasPrev && (
         <button
           type='button'
-          className='scw-lightbox__nav scw-lightbox__nav--prev'
+          className={cx(navButton, 'scw:left-3')}
           aria-label={locale.galleryPrev}
           onClick={() => onIndexChange(index - 1)}
         >
-          <ChevronLeftIcon />
+          <ChevronLeftIcon
+            width={26}
+            height={26}
+          />
         </button>
       )}
       <img
         key={item.key}
-        className='scw-lightbox__image'
+        className='scw:max-h-full scw:max-w-full scw:animate-zoom scw:select-none scw:rounded-md scw:object-contain scw:shadow-[0_16px_64px_rgba(0,0,0,0.5)]'
         src={item.url}
         alt={item.name}
         onClick={event => event.stopPropagation()}
@@ -131,11 +141,14 @@ export const Lightbox = ({ items, index, onIndexChange, onClose, locale }: Light
       {hasNext && (
         <button
           type='button'
-          className='scw-lightbox__nav scw-lightbox__nav--next'
+          className={cx(navButton, 'scw:right-3')}
           aria-label={locale.galleryNext}
           onClick={() => onIndexChange(index + 1)}
         >
-          <ChevronRightIcon />
+          <ChevronRightIcon
+            width={26}
+            height={26}
+          />
         </button>
       )}
     </div>,

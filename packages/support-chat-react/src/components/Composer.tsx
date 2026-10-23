@@ -1,9 +1,13 @@
-import { SUPPORT_LIMITS } from '@app/support-chat-client'
+import { SUPPORT_LIMITS, type SupportTimelineMessage, toSupportReply } from '@app/support-chat-client'
 
 import { type ClipboardEvent, type KeyboardEvent, useEffect, useRef, useState } from 'react'
 
+import { cx } from '../cx'
 import { CloseIcon, PaperclipIcon, SendIcon } from '../icons'
 import type { SupportLocale } from '../locale'
+import { iconButton } from '../ui'
+
+import { ReplyQuote } from './ReplyQuote'
 
 const ACCEPT = 'image/jpeg,image/png,image/webp'
 const MAX_HEIGHT_PX = 160
@@ -17,13 +21,28 @@ export interface ComposerProps {
   /** Оператору: переключатель «заметка для коллег». */
   allowNote?: boolean
   autoFocus?: boolean
+  /** На что отвечаем — плашка над полем; крестик или Escape отменяют. */
+  replyTo?: SupportTimelineMessage | null
+  onCancelReply?: () => void
+  /** Чьи сообщения «свои» — для подписи «Вы» в цитате. */
+  ownAuthor?: SupportTimelineMessage['author']
 }
 
 /**
  * Поле ввода: Enter — отправить, Shift+Enter — новая строка, картинки — скрепкой или вставкой из буфера.
  * Одно поле без валидации кроме длины — поэтому обычное состояние, а не библиотека форм.
  */
-export const Composer = ({ onSend, onTyping, disabled, locale, allowNote, autoFocus }: ComposerProps) => {
+export const Composer = ({
+  onSend,
+  onTyping,
+  disabled,
+  locale,
+  allowNote,
+  autoFocus,
+  replyTo,
+  onCancelReply,
+  ownAuthor = 'CONTACT',
+}: ComposerProps) => {
   const [text, setText] = useState('')
   const [files, setFiles] = useState<File[]>([])
   const [note, setNote] = useState(false)
@@ -45,6 +64,15 @@ export const Composer = ({ onSend, onTyping, disabled, locale, allowNote, autoFo
     element.style.height = `${Math.min(element.scrollHeight, MAX_HEIGHT_PX)}px`
   }, [text])
 
+  // Ответ на заметку — тоже заметка: иначе клиент увидел бы её текст в цитате
+  const noteLocked = !!replyTo?.isInternalNote
+
+  useEffect(() => {
+    if (!replyTo) return
+    if (replyTo.isInternalNote) setNote(true)
+    textRef.current?.focus()
+  }, [replyTo])
+
   const canSend = !disabled && (text.trim().length > 0 || files.length > 0)
 
   const submit = () => {
@@ -63,6 +91,12 @@ export const Composer = ({ onSend, onTyping, disabled, locale, allowNote, autoFo
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Escape сначала отменяет ответ, а не закрывает окно чата
+    if (event.key === 'Escape' && replyTo && onCancelReply) {
+      event.stopPropagation()
+      onCancelReply()
+      return
+    }
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault()
       submit()
@@ -78,22 +112,51 @@ export const Composer = ({ onSend, onTyping, disabled, locale, allowNote, autoFo
   }
 
   return (
-    <div className={`scw-composer${note ? 'scw-composer--note' : ''}`}>
+    <div
+      className={cx(
+        'scw:flex-none scw:border-t scw:border-border scw:px-2.5 scw:pt-2 scw:pb-2.5',
+        note ? 'scw:bg-note-bubble' : 'scw:bg-bg',
+      )}
+    >
+      {replyTo && (
+        <div className='scw:flex scw:items-center scw:gap-1 scw:px-1 scw:pb-2'>
+          <ReplyQuote
+            reply={toSupportReply(replyTo)}
+            ownAuthor={ownAuthor}
+            locale={locale}
+            className='scw:flex-1 scw:bg-surface'
+          />
+          <button
+            type='button'
+            className={iconButton}
+            aria-label={locale.cancelReply}
+            title={locale.cancelReply}
+            onClick={onCancelReply}
+          >
+            <CloseIcon
+              width={16}
+              height={16}
+            />
+          </button>
+        </div>
+      )}
       {files.length > 0 && (
-        <div className='scw-composer__files'>
+        <div className='scw:flex scw:flex-wrap scw:gap-1.5 scw:px-1 scw:pt-1 scw:pb-2'>
           {files.map((file, index) => (
             <div
               key={`${file.name}-${index}`}
-              className='scw-composer__file'
+              className='scw:relative scw:size-14 scw:overflow-hidden scw:rounded-lg scw:bg-surface'
             >
               {previews[index] && (
                 <img
+                  className='scw:size-full scw:object-cover'
                   src={previews[index]}
                   alt={file.name}
                 />
               )}
               <button
                 type='button'
+                className='scw:absolute scw:top-0.5 scw:right-0.5 scw:inline-flex scw:rounded-full scw:bg-[rgba(22,25,28,0.7)] scw:p-[3px] scw:text-white'
                 aria-label={locale.removeFile}
                 onClick={() => setFiles(current => current.filter((_, i) => i !== index))}
               >
@@ -106,10 +169,10 @@ export const Composer = ({ onSend, onTyping, disabled, locale, allowNote, autoFo
           ))}
         </div>
       )}
-      <div className='scw-composer__row'>
+      <div className='scw:flex scw:items-end scw:gap-1'>
         <button
           type='button'
-          className='scw-icon-button'
+          className={iconButton}
           aria-label={locale.attach}
           title={locale.attach}
           disabled={disabled || files.length >= SUPPORT_LIMITS.attachmentsMax}
@@ -130,7 +193,7 @@ export const Composer = ({ onSend, onTyping, disabled, locale, allowNote, autoFo
         />
         <textarea
           ref={textRef}
-          className='scw-composer__input'
+          className='scw:max-h-40 scw:min-h-9 scw:flex-1 scw:resize-none scw:border-0 scw:bg-transparent scw:px-1 scw:py-2 scw:leading-5 scw:text-text scw:outline-none scw:placeholder:text-muted'
           rows={1}
           value={text}
           maxLength={SUPPORT_LIMITS.textMaxLength}
@@ -146,20 +209,28 @@ export const Composer = ({ onSend, onTyping, disabled, locale, allowNote, autoFo
         />
         <button
           type='button'
-          className='scw-send'
+          className='scw:inline-flex scw:size-9 scw:flex-none scw:items-center scw:justify-center scw:rounded-full scw:bg-accent scw:text-accent-text scw:transition-transform scw:duration-100 scw:enabled:active:scale-94'
           aria-label={locale.send}
           title={locale.send}
           disabled={!canSend}
           onClick={submit}
         >
-          <SendIcon />
+          <SendIcon
+            width={20}
+            height={20}
+            strokeWidth={2.4}
+          />
         </button>
       </div>
       {allowNote && (
-        <label className='scw-composer__note'>
+        <label
+          className='scw:mx-1 scw:mt-1 scw:inline-flex scw:cursor-pointer scw:select-none scw:items-center scw:gap-1.5 scw:text-xs scw:text-muted'
+          title={noteLocked ? locale.replyNoteOnly : undefined}
+        >
           <input
             type='checkbox'
             checked={note}
+            disabled={noteLocked}
             onChange={event => setNote(event.target.checked)}
           />
           {locale.note}

@@ -1,3 +1,5 @@
+import type { SupportMessageAuthor } from '@app/support-chat-client'
+
 import type { SupportLocale } from './locale'
 
 const time = new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' })
@@ -7,7 +9,12 @@ const shortDate = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-d
 
 const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
 
-export const formatTime = (iso: string): string => time.format(new Date(iso))
+/** Время сообщения: «11:57 23 октября», не в этом году — с годом. */
+export const formatTime = (iso: string): string => {
+  const date = new Date(iso)
+  const day = (date.getFullYear() === new Date().getFullYear() ? dayMonth : dayMonthYear).format(date)
+  return `${time.format(date)} ${day}`
+}
 
 /** Разделитель дней в ленте: «Сегодня», «Вчера», «12 октября». */
 export const formatDay = (iso: string, locale: SupportLocale): string => {
@@ -17,6 +24,10 @@ export const formatDay = (iso: string, locale: SupportLocale): string => {
   if (days === 1) return locale.yesterday
   return (date.getFullYear() === new Date().getFullYear() ? dayMonth : dayMonthYear).format(date)
 }
+
+/** Подпись автора: имя, а без него — роль. */
+export const authorLabel = (author: SupportMessageAuthor, name: string | null, locale: SupportLocale): string =>
+  name ?? (author === 'CONTACT' ? locale.visitor : author === 'OPERATOR' ? locale.operator : locale.support)
 
 export const dayKey = (iso: string): number => startOfDay(new Date(iso))
 

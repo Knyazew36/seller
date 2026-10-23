@@ -24,6 +24,19 @@ export interface SupportAttachment {
   size: number
 }
 
+/** Цитата сообщения, на которое ответили: хватает, чтобы показать её и перейти к оригиналу. */
+export interface SupportMessageReply {
+  id: number
+  seq: number
+  author: SupportMessageAuthor
+  authorName: string | null
+  /** Начало текста; у удалённого — пустая строка. */
+  text: string
+  /** Сколько вложений — чтобы подписать цитату без текста («Фото»). */
+  attachmentsCount: number
+  deletedAt: string | null
+}
+
 export interface SupportMessage {
   id: number
   conversationId: number
@@ -41,6 +54,8 @@ export interface SupportMessage {
   clientMessageId: string | null
   channel: SupportChannel
   attachments: SupportAttachment[]
+  /** На что ответили; null — обычное сообщение или оригинал недоступен. */
+  replyTo: SupportMessageReply | null
   editedAt: string | null
   deletedAt: string | null
   createdAt: string

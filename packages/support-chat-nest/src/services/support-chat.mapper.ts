@@ -1,11 +1,25 @@
 import { Injectable } from '@nestjs/common'
 
-import type { SupportAttachmentDto, SupportContactDto, SupportConversationDto, SupportMessageDto } from '../dto'
+import type {
+  SupportAttachmentDto,
+  SupportContactDto,
+  SupportConversationDto,
+  SupportMessageDto,
+  SupportMessageReplyDto,
+} from '../dto'
 import { SupportFileStorage } from '../ports'
-import type { SupportContactRecord, SupportConversationRecord, SupportMessageRecord } from '../support-chat.records'
+import type {
+  SupportContactRecord,
+  SupportConversationRecord,
+  SupportMessageRecord,
+  SupportMessageReplyRecord,
+} from '../support-chat.records'
 
 /** Кому отдаём диалог: посетителю не показываем теги и счётчики операторов. */
 export type SupportViewer = 'contact' | 'operator'
+
+/** Цитате хватает начала: полный текст ответа удвоил бы размер ленты. */
+const REPLY_TEXT_MAX = 200
 
 @Injectable()
 export class SupportChatMapper {
@@ -28,6 +42,7 @@ export class SupportChatMapper {
       clientMessageId: record.clientMessageId,
       channel: record.channel,
       attachments: deleted ? [] : this.attachments(record),
+      replyTo: deleted || !record.replyTo ? null : this.reply(record.replyTo),
       editedAt: record.editedAt?.toISOString() ?? null,
       deletedAt: record.deletedAt?.toISOString() ?? null,
       createdAt: record.createdAt.toISOString(),
@@ -77,6 +92,19 @@ export class SupportChatMapper {
   }
 
   // ── Внутреннее ─────────────────────────────────────────────────────────────
+
+  private reply(record: SupportMessageReplyRecord): SupportMessageReplyDto {
+    const deleted = record.deletedAt !== null
+    return {
+      id: record.id,
+      seq: record.seq,
+      author: record.author,
+      authorName: record.authorName,
+      text: deleted ? '' : record.text.slice(0, REPLY_TEXT_MAX),
+      attachmentsCount: deleted ? 0 : record.attachmentsCount,
+      deletedAt: record.deletedAt?.toISOString() ?? null,
+    }
+  }
 
   private attachments(record: SupportMessageRecord): SupportAttachmentDto[] {
     return record.attachments.flatMap(attachment => {

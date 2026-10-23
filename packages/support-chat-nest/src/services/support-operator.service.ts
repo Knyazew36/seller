@@ -103,7 +103,7 @@ export class SupportOperatorService {
       const result = await this.messaging.post({
         conversationId: conversation.id,
         scope: this.scope(),
-        input: this.operatorInput(operator, dto.text, false, null),
+        input: this.operatorInput(operator, { text: dto.text }),
         effects: { readBy: 'OPERATOR', unreadFor: 'CONTACT' },
         files: [],
       })
@@ -145,10 +145,8 @@ export class SupportOperatorService {
       conversation = await this.messaging.postSystem(conversation, statusText)
     }
     if (assignee) {
-      conversation = await this.messaging.postSystem(
-        conversation,
-        assignee.name ? `К диалогу подключился ${assignee.name}` : 'К диалогу подключился оператор',
-      )
+      // Без имени: клиенту важно, что ответит человек, а не кто именно
+      conversation = await this.messaging.postSystem(conversation, 'К диалогу подключился оператор')
     }
     return this.mapper.conversation(conversation, 'operator')
   }
@@ -218,7 +216,13 @@ export class SupportOperatorService {
     const result = await this.messaging.post({
       conversationId: dto.conversationId,
       scope: this.scope(),
-      input: this.operatorInput(operator, dto.text ?? '', isInternalNote, dto.clientMessageId ?? null, channel),
+      input: this.operatorInput(operator, {
+        text: dto.text ?? '',
+        isInternalNote,
+        clientMessageId: dto.clientMessageId ?? null,
+        replyToId: dto.replyToId ?? null,
+        channel,
+      }),
       effects: isInternalNote
         ? { readBy: 'OPERATOR' }
         : {
@@ -269,19 +273,23 @@ export class SupportOperatorService {
 
   private operatorInput(
     operator: SupportOperator,
-    text: string,
-    isInternalNote: boolean,
-    clientMessageId: string | null,
-    channel: SupportChannel = 'WIDGET',
+    message: {
+      text: string
+      isInternalNote?: boolean
+      clientMessageId?: string | null
+      replyToId?: number | null
+      channel?: SupportChannel
+    },
   ) {
     return {
       author: 'OPERATOR' as const,
       authorId: operator.id,
       authorName: operator.name,
-      text,
-      isInternalNote,
-      clientMessageId,
-      channel,
+      text: message.text,
+      isInternalNote: message.isInternalNote ?? false,
+      clientMessageId: message.clientMessageId ?? null,
+      replyToId: message.replyToId ?? null,
+      channel: message.channel ?? 'WIDGET',
     }
   }
 }

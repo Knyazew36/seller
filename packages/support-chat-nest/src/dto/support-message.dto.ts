@@ -8,6 +8,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger'
 
 import { SupportAttachmentDto } from './support-attachment.dto'
+import { SupportMessageReplyDto } from './support-message-reply.dto'
 
 export class SupportMessageDto implements SupportMessage {
   @ApiProperty()
@@ -42,6 +43,9 @@ export class SupportMessageDto implements SupportMessage {
 
   @ApiProperty({ type: [SupportAttachmentDto] })
   public attachments: SupportAttachmentDto[]
+
+  @ApiProperty({ type: SupportMessageReplyDto, nullable: true, description: 'На какое сообщение ответ' })
+  public replyTo: SupportMessageReplyDto | null
 
   @ApiProperty({ type: String, format: 'date-time', nullable: true })
   public editedAt: string | null

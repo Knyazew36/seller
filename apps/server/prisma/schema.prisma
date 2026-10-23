@@ -337,6 +337,13 @@ model SupportMessage {
   deletedAt DateTime?
   createdAt DateTime  @default(now())
 
+  /// на какое сообщение этого диалога ответ; оригинал удалили из БД — ответ остаётся без цитаты
+  replyToId Int?
+  replyTo   SupportMessage?  @relation("SupportMessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   SupportMessage[] @relation("SupportMessageReply")
+  /// копии в теме Telegram-группы операторов (мост поддержки)
+  telegramCopies SupportTelegramMessage[]
+
   attachments SupportAttachment[]
 
   @@unique([conversationId, seq])
@@ -372,6 +379,21 @@ model SupportTelegramTopic {
   createdAt      DateTime @default(now())
 
   @@unique([chatId, threadId])
+}
+
+/// Сообщение ленты ↔ его копия в теме Telegram: по ней «Ответить» работает в обе стороны
+model SupportTelegramMessage {
+  chatId      String
+  /// message_id в группе
+  tgMessageId Int
+
+  messageId Int
+  message   SupportMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([chatId, tgMessageId])
+  @@index([messageId])
 }
 
 // ============================================================

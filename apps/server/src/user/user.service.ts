@@ -251,7 +251,9 @@ export class UserService {
 
     try {
       await this.prisma.user.update({
-        where: { id: userId, [id]: { not: null }, OR: otherLogins },
+        // Уникальные поля на верхнем уровне WhereUniqueInput принимают только значение, не фильтр —
+        // поэтому «привязан» проверяем внутри AND (там обычный WhereInput).
+        where: { id: userId, AND: [{ [id]: { not: null } }], OR: otherLogins },
         data: { [id]: null, [profile]: Prisma.JsonNull },
       });
     } catch (error) {

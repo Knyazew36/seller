@@ -27,6 +27,17 @@ export interface SupportAttachmentRecord {
   size: number
 }
 
+export interface SupportMessageReplyRecord {
+  id: number
+  seq: number
+  author: SupportMessageAuthor
+  authorName: string | null
+  text: string
+  isInternalNote: boolean
+  deletedAt: Date | null
+  attachmentsCount: number
+}
+
 export interface SupportMessageRecord {
   id: number
   conversationId: number
@@ -42,6 +53,7 @@ export interface SupportMessageRecord {
   deletedAt: Date | null
   createdAt: Date
   attachments: SupportAttachmentRecord[]
+  replyTo: SupportMessageReplyRecord | null
 }
 
 /** Сообщение вместе с контактом диалога — чтобы разослать событие о правке нужному посетителю. */
@@ -115,6 +127,8 @@ export interface SupportMessageInput {
   isInternalNote: boolean
   clientMessageId: string | null
   channel: SupportChannel
+  /** Хранилище ставит ответ, только если оригинал в этом же диалоге и виден автору ответа. */
+  replyToId: number | null
   attachments: Array<Omit<SupportAttachmentRecord, 'id'>>
 }
 

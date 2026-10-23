@@ -10,7 +10,7 @@ import {
 import { SupportHttp } from './http'
 import { createSupportSocket, socketUrlFromApi, type SupportSocket, watchWake } from './socket'
 import { StateStore } from './state-store'
-import { SupportTimeline } from './timeline'
+import { SupportTimeline, toSupportReply } from './timeline'
 
 export interface SupportOperatorClientOptions {
   /** Адрес API с префиксом: https://api.example.com/api */
@@ -381,12 +381,22 @@ export class SupportOperatorConversation {
 
   // ── Сообщения ──────────────────────────────────────────────────────────────
 
-  public send(text: string, files: File[] = [], options: { internal?: boolean } = {}): void {
+  /** replyTo — сообщение ленты, на которое отвечаем. */
+  public send(
+    text: string,
+    files: File[] = [],
+    options: { internal?: boolean; replyTo?: SupportMessage | null } = {},
+  ): void {
     if (!text.trim() && files.length === 0) return
-    this.timeline.send(text, files.slice(0, SUPPORT_LIMITS.attachmentsMax), {
-      conversationId: String(this.id),
-      isInternalNote: String(options.internal ?? false),
-    })
+    this.timeline.send(
+      text,
+      files.slice(0, SUPPORT_LIMITS.attachmentsMax),
+      {
+        conversationId: String(this.id),
+        isInternalNote: String(options.internal ?? false),
+      },
+      options.replyTo ? toSupportReply(options.replyTo) : null,
+    )
   }
 
   /** internal — пишется заметка: «печатает…» увидят только коллеги. */

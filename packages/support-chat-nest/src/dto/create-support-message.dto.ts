@@ -1,7 +1,7 @@
 import { SUPPORT_LIMITS } from '@app/support-chat-core'
 import { ApiPropertyOptional } from '@nestjs/swagger'
-import { Transform } from 'class-transformer'
-import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator'
+import { Transform, Type } from 'class-transformer'
+import { IsInt, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator'
 
 import { trimText } from './transforms'
 
@@ -18,4 +18,11 @@ export class CreateSupportMessageDto {
   @IsOptional()
   @IsUUID()
   public clientMessageId?: string
+
+  @ApiPropertyOptional({ description: 'id сообщения этого диалога, на которое отвечаем' })
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  public replyToId?: number
 }

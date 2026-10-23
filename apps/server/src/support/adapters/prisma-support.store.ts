@@ -27,6 +27,18 @@ import { ENTITY_EMOJI } from '@/common/utils';
 
 const MESSAGE_INCLUDE = {
   attachments: { orderBy: { id: 'asc' } },
+  replyTo: {
+    select: {
+      id: true,
+      seq: true,
+      author: true,
+      authorName: true,
+      text: true,
+      isInternalNote: true,
+      deletedAt: true,
+      _count: { select: { attachments: true } },
+    },
+  },
 } satisfies Prisma.SupportMessageInclude;
 
 const MESSAGE_WITH_CONTACT_INCLUDE = {
@@ -195,7 +207,11 @@ export class PrismaSupportStore extends SupportStore {
       ).map(({ messages, ...conversation }) => ({
         ...conversation,
         ...(query.withLastMessage
-          ? { lastMessage: messages?.[0] ?? null }
+          ? {
+              lastMessage: messages?.[0]
+                ? this.messageRecord(messages[0])
+                : null,
+            }
           : {}),
       })),
     };
@@ -343,17 +359,24 @@ export class PrismaSupportStore extends SupportStore {
               })
             : bumped;
 
-        const { attachments, ...fields } = input;
+        const { attachments, replyToId, ...fields } = input;
         const message = await tx.supportMessage.create({
           data: {
             ...fields,
             conversationId,
             seq,
+            replyToId: replyToId
+              ? await this.replyTarget(tx, conversationId, replyToId, input)
+              : null,
             attachments: { create: attachments },
           },
           include: MESSAGE_INCLUDE,
         });
-        return { conversation, message, created: true };
+        return {
+          conversation,
+          message: this.messageRecord(message),
+          created: true,
+        };
       });
     } catch (error) {
       if (this.isPrismaError(error, 'P2025')) return null;
@@ -379,7 +402,10 @@ export class PrismaSupportStore extends SupportStore {
       },
       include: MESSAGE_INCLUDE,
     });
-    return { items: items as MessageRow[], hasMore: meta.hasMore };
+    return {
+      items: (items as MessageRow[]).map((row) => this.messageRecord(row)),
+      hasMore: meta.hasMore,
+    };
   }
 
   public async findMessage(
@@ -467,14 +493,52 @@ export class PrismaSupportStore extends SupportStore {
       );
       return null;
     }
-    return { conversation, message, created: false };
+    return { conversation, message: this.messageRecord(message), created: false };
   }
 
   private withContact({
     conversation,
     ...message
   }: MessageWithContactRow): SupportMessageWithContact {
-    return { ...message, contactId: conversation.contactId };
+    return {
+      ...this.messageRecord(message),
+      contactId: conversation.contactId,
+    };
+  }
+
+  private messageRecord({ replyTo, ...row }: MessageRow): SupportMessageRecord {
+    if (!replyTo) return { ...row, replyTo: null };
+    const { _count, ...reply } = replyTo;
+    return {
+      ...row,
+      replyTo: { ...reply, attachmentsCount: _count.attachments },
+    };
+  }
+
+  /**
+   * Цитировать можно только сообщение этого же диалога; заметку — только из заметки,
+   * иначе клиент увидел бы её текст в цитате. Чужой id не ошибка отправки: ответ уйдёт без цитаты.
+   */
+  private async replyTarget(
+    tx: Prisma.TransactionClient,
+    conversationId: number,
+    replyToId: number,
+    input: SupportMessageInput,
+  ): Promise<number | null> {
+    const target = await tx.supportMessage.findFirst({
+      where: {
+        id: replyToId,
+        conversationId,
+        ...(input.isInternalNote ? {} : { isInternalNote: false }),
+      },
+      select: { id: true },
+    });
+    if (!target) {
+      this.logger.warn(
+        `Цитата недоступна conversationId=${conversationId} replyToId=${replyToId} author=${input.author}`,
+      );
+    }
+    return target?.id ?? null;
   }
 
   private async nullIfNotFound<T>(action: () => Promise<T>): Promise<T | null> {

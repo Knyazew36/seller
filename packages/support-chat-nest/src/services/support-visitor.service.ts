@@ -143,6 +143,7 @@ export class SupportVisitorService {
         text: dto.text ?? '',
         isInternalNote: false,
         clientMessageId: dto.clientMessageId ?? null,
+        replyToId: dto.replyToId ?? null,
         channel: 'WIDGET',
       },
       effects: {

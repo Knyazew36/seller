@@ -4,13 +4,26 @@ import type {
   SupportInboxFilters,
   SupportOperatorClient,
   SupportOperatorConversation,
+  SupportTimelineMessage,
 } from '@app/support-chat-client'
 
 import { useEffect, useMemo, useState } from 'react'
 
+import { cx } from '../cx'
 import { formatListTime } from '../format'
 import { ArrowLeftIcon } from '../icons'
 import { mergeLocale, type SupportLocale, type SupportLocaleOverride } from '../locale'
+import {
+  badge,
+  button,
+  buttonGhost,
+  dot,
+  iconButtonHiddenUntilMobile,
+  input,
+  state,
+  statusTag,
+  typing as typingLine,
+} from '../ui'
 import { useStoreState } from '../use-store'
 
 import { Avatar } from './Avatar'
@@ -42,6 +55,9 @@ const STATUS_TABS = (locale: SupportLocale): Array<{ label: string; status: Supp
 
 const SEARCH_DEBOUNCE_MS = 300
 
+const pane = 'scw:flex scw:min-h-0 scw:min-w-0 scw:flex-col'
+const listMessage = 'scw:px-4 scw:py-8 scw:text-center'
+
 /** Инбокс оператора: список обращений с фильтрами и открытый диалог. */
 export const SupportInbox = (props: SupportInboxProps) => {
   const { client, selectedId, onSelect } = props
@@ -54,7 +70,10 @@ export const SupportInbox = (props: SupportInboxProps) => {
 
   return (
     <div
-      className={`scw-root scw-inbox${selectedId ? 'scw-inbox--selected' : ''}${props.className ? ` ${props.className}` : ''}`}
+      className={cx(
+        'scw-root scw:grid scw:h-full scw:min-h-120 scw:grid-cols-[minmax(280px,360px)_1fr] scw:overflow-hidden scw:rounded-3xl scw:border scw:border-border scw:bg-bg scw:max-[768px]:grid-cols-1',
+        props.className,
+      )}
     >
       <InboxList
         client={client}
@@ -74,7 +93,9 @@ export const SupportInbox = (props: SupportInboxProps) => {
           locale={locale}
         />
       ) : (
-        <div className='scw-inbox__placeholder'>{locale.inboxPick}</div>
+        <div className={cx(listMessage, 'scw:flex scw:items-center scw:justify-center scw:text-muted scw:max-[768px]:hidden')}>
+          {locale.inboxPick}
+        </div>
       )}
     </div>
   )
@@ -106,17 +127,23 @@ const InboxList = ({
   const activeTab = tabs.find(tab => tab.status.join() === filters.status.join())
 
   return (
-    <aside className='scw-inbox__list'>
-      <div className='scw-inbox__filters'>
+    <aside
+      className={cx(
+        'scw:flex scw:min-h-0 scw:flex-col scw:border-r scw:border-border scw:max-[768px]:border-r-0',
+        // На телефоне список и диалог — по очереди: открыт диалог — список прячем
+        selectedId !== null && 'scw:max-[768px]:hidden',
+      )}
+    >
+      <div className='scw:flex scw:flex-col scw:gap-2.5 scw:border-b scw:border-border scw:p-3.5'>
         <input
-          className='scw-input'
+          className={input}
           type='search'
           value={search}
           placeholder={locale.inboxSearch}
           onChange={event => setSearch(event.target.value)}
         />
         <div
-          className='scw-tabs'
+          className='scw:flex scw:flex-wrap scw:gap-1'
           role='tablist'
         >
           {tabs.map(tab => (
@@ -125,14 +152,17 @@ const InboxList = ({
               type='button'
               role='tab'
               aria-selected={tab === activeTab}
-              className={tab === activeTab ? 'scw-tab scw-tab--active' : 'scw-tab'}
+              className={cx(
+                'scw:h-7 scw:rounded-full scw:px-2.5 scw:text-sm',
+                tab === activeTab ? 'scw:bg-action scw:text-action-text' : 'scw:text-muted scw:hover:bg-surface',
+              )}
               onClick={() => client.setFilters({ status: tab.status })}
             >
               {tab.label}
             </button>
           ))}
         </div>
-        <div className='scw-segmented'>
+        <div className='scw:flex scw:items-center scw:gap-1'>
           {(
             [
               ['all', locale.assigneeAll],
@@ -144,25 +174,26 @@ const InboxList = ({
               key={value}
               type='button'
               aria-pressed={filters.assignee === value}
-              className={
-                filters.assignee === value ? 'scw-segmented__item scw-segmented__item--active' : 'scw-segmented__item'
-              }
+              className={cx(
+                'scw:h-7 scw:rounded-md scw:border scw:px-2.5 scw:text-sm',
+                filters.assignee === value ? 'scw:border-text scw:text-text' : 'scw:border-border scw:text-muted',
+              )}
               onClick={() => client.setFilters({ assignee: value })}
             >
               {label}
             </button>
           ))}
           <span
-            className={`scw-dot${connected ? 'scw-dot--online' : ''}`}
+            className={cx(dot(connected), 'scw:ml-auto')}
             title={connected ? undefined : locale.connecting}
           />
         </div>
       </div>
 
-      <div className='scw-inbox__items'>
-        {inbox.error && <div className='scw-inbox__error'>{inbox.error}</div>}
+      <div className='scw:min-h-0 scw:flex-1 scw:overflow-y-auto'>
+        {inbox.error && <div className={cx(listMessage, 'scw:text-danger')}>{inbox.error}</div>}
         {!inbox.loading && !inbox.error && inbox.items.length === 0 && (
-          <div className='scw-inbox__empty'>{locale.inboxEmpty}</div>
+          <div className={cx(listMessage, 'scw:text-muted')}>{locale.inboxEmpty}</div>
         )}
         {inbox.items.map(conversation => (
           <InboxItem
@@ -177,10 +208,10 @@ const InboxList = ({
       </div>
 
       {inbox.totalPages > 1 && (
-        <div className='scw-inbox__pager'>
+        <div className='scw:flex scw:items-center scw:justify-between scw:gap-2 scw:border-t scw:border-border scw:px-3.5 scw:py-2.5 scw:text-sm scw:text-muted'>
           <button
             type='button'
-            className='scw-button scw-button--ghost'
+            className={buttonGhost}
             disabled={filters.page <= 1}
             onClick={() => client.setPage(filters.page - 1)}
           >
@@ -191,7 +222,7 @@ const InboxList = ({
           </span>
           <button
             type='button'
-            className='scw-button scw-button--ghost'
+            className={buttonGhost}
             disabled={filters.page >= inbox.totalPages}
             onClick={() => client.setPage(filters.page + 1)}
           >
@@ -233,23 +264,35 @@ const InboxItem = ({
   return (
     <button
       type='button'
-      className={`scw-item${selected ? 'scw-item--selected' : ''}${conversation.unreadForOperator ? 'scw-item--unread' : ''}`}
+      className={cx(
+        'scw:flex scw:w-full scw:gap-3 scw:border-b scw:border-border scw:px-3.5 scw:py-3 scw:text-left',
+        selected ? 'scw:bg-other-bubble' : 'scw:hover:bg-surface',
+      )}
       onClick={() => onSelect(conversation.id)}
     >
       <Avatar name={name} />
-      <span className='scw-item__body'>
-        <span className='scw-item__top'>
-          <span className='scw-item__name'>{name}</span>
-          <span className='scw-item__time'>{formatListTime(conversation.lastMessageAt)}</span>
+      <span className='scw:flex scw:min-w-0 scw:flex-1 scw:flex-col scw:gap-0.5'>
+        <span className='scw:flex scw:items-center scw:gap-2'>
+          <span className='scw:flex-1 scw:truncate scw:font-semibold'>{name}</span>
+          <span className='scw:flex-none scw:text-xs scw:text-muted'>{formatListTime(conversation.lastMessageAt)}</span>
         </span>
-        <span className='scw-item__bottom'>
-          <span className={`scw-item__preview${typing ? 'scw-item__preview--typing' : ''}`}>{preview}</span>
-          {conversation.unreadForOperator > 0 && (
-            <span className='scw-badge scw-badge--inline'>{conversation.unreadForOperator}</span>
-          )}
+        <span className='scw:flex scw:items-center scw:gap-2'>
+          <span
+            className={cx(
+              'scw:flex-1 scw:truncate',
+              typing
+                ? 'scw:text-accent scw:italic'
+                : conversation.unreadForOperator > 0
+                  ? 'scw:text-text'
+                  : 'scw:text-muted',
+            )}
+          >
+            {preview}
+          </span>
+          {conversation.unreadForOperator > 0 && <span className={badge}>{conversation.unreadForOperator}</span>}
         </span>
-        <span className='scw-item__tags'>
-          <span className={`scw-status-tag scw-status-tag--${conversation.status.toLowerCase()}`}>
+        <span className='scw:mt-0.5 scw:flex scw:flex-wrap scw:items-center scw:gap-x-2 scw:gap-y-1 scw:text-2xs scw:text-muted'>
+          <span className={statusTag(conversation.status)}>
             {locale.status[conversation.status]}
           </span>
           <span>{locale.channel[conversation.sourceChannel]}</span>
@@ -292,7 +335,7 @@ const ConversationPane = (props: ConversationPaneProps) => {
       session={session}
     />
   ) : (
-    <section className='scw-pane' />
+    <section className={pane} />
   )
 }
 
@@ -310,6 +353,10 @@ const ConversationView = ({
   const timeline = useStoreState(session.timeline.store)
   const { typing } = useStoreState(client.store)
   const [busy, setBusy] = useState(false)
+  const [replyTo, setReplyTo] = useState<SupportTimelineMessage | null>(null)
+
+  // Вид не пересоздаётся при смене диалога — цитата из прошлого не должна уехать в новый
+  useEffect(() => setReplyTo(null), [session])
 
   useEffect(() => {
     if (document.visibilityState !== 'hidden') void session.markRead()
@@ -324,13 +371,13 @@ const ConversationView = ({
 
   if (deleted || error) {
     return (
-      <section className='scw-pane'>
+      <section className={pane}>
         <PaneBack
           onBack={onBack}
           locale={locale}
         />
-        <div className='scw-state'>
-          <div className='scw-state__title'>{deleted ? locale.conversationDeleted : error}</div>
+        <div className={state.root}>
+          <div className={state.title}>{deleted ? locale.conversationDeleted : error}</div>
         </div>
       </section>
     )
@@ -345,26 +392,24 @@ const ConversationView = ({
   const contactTyping = id in typing
 
   return (
-    <section className='scw-pane'>
-      <header className='scw-pane__header'>
+    <section className={pane}>
+      <header className='scw:flex scw:flex-wrap scw:items-center scw:gap-3 scw:border-b scw:border-border scw:px-4 scw:py-3'>
         <PaneBack
           onBack={onBack}
           locale={locale}
         />
         <Avatar name={name} />
-        <div className='scw-pane__who'>
-          <span className='scw-pane__name'>{name}</span>
-          <span className='scw-pane__details'>{details.join(' · ')}</span>
+        <div className='scw:flex scw:min-w-40 scw:flex-1 scw:flex-col'>
+          <span className='scw:text-md scw:font-bold'>{name}</span>
+          <span className='scw:text-xs scw:text-muted'>{details.join(' · ')}</span>
         </div>
         {conversation && (
-          <div className='scw-pane__actions'>
-            {status && (
-              <span className={`scw-status-tag scw-status-tag--${status.toLowerCase()}`}>{locale.status[status]}</span>
-            )}
+          <div className='scw:flex scw:flex-wrap scw:items-center scw:gap-2'>
+            {status && <span className={statusTag(status)}>{locale.status[status]}</span>}
             {conversation.assigneeId !== operatorId && status !== 'CLOSED' && (
               <button
                 type='button'
-                className='scw-button scw-button--ghost'
+                className={buttonGhost}
                 disabled={busy}
                 onClick={() => run(() => session.assignToMe())}
               >
@@ -374,7 +419,7 @@ const ConversationView = ({
             {(status === 'OPEN' || status === 'PENDING') && (
               <button
                 type='button'
-                className='scw-button scw-button--ghost'
+                className={buttonGhost}
                 disabled={busy}
                 onClick={() => run(() => session.update({ status: 'RESOLVED' }))}
               >
@@ -384,7 +429,7 @@ const ConversationView = ({
             {status === 'CLOSED' || status === 'RESOLVED' ? (
               <button
                 type='button'
-                className='scw-button'
+                className={button}
                 disabled={busy}
                 onClick={() => run(() => session.reopen())}
               >
@@ -393,7 +438,7 @@ const ConversationView = ({
             ) : (
               <button
                 type='button'
-                className='scw-button'
+                className={button}
                 disabled={busy}
                 onClick={() => run(() => session.close())}
               >
@@ -408,22 +453,31 @@ const ConversationView = ({
         messages={timeline.messages}
         ownAuthor='OPERATOR'
         otherReadSeq={conversation?.contactReadSeq ?? 0}
+        loading={timeline.loading}
         hasMoreBefore={timeline.hasMoreBefore}
         loadingOlder={timeline.loadingOlder}
         onLoadOlder={() => void session.timeline.loadOlder()}
         onRetry={key => session.timeline.retry(key)}
         onDiscard={key => session.timeline.discard(key)}
+        onReply={setReplyTo}
+        onRevealSeq={seq => session.timeline.loadUntil(seq)}
         assetBaseUrl={assetBaseUrl}
         locale={locale}
         showAuthorNames
         contactName={name}
-        footer={contactTyping && <div className='scw-typing'>{`${name} ${locale.typing}`}</div>}
+        footer={contactTyping && <div className={typingLine}>{`${name} ${locale.typing}`}</div>}
       />
 
       <Composer
         locale={locale}
         allowNote
-        onSend={(text, files, options) => session.send(text, files, options)}
+        replyTo={replyTo}
+        onCancelReply={() => setReplyTo(null)}
+        ownAuthor='OPERATOR'
+        onSend={(text, files, options) => {
+          session.send(text, files, { ...options, replyTo })
+          setReplyTo(null)
+        }}
         onTyping={options => session.notifyTyping(options)}
       />
     </section>
@@ -433,7 +487,7 @@ const ConversationView = ({
 const PaneBack = ({ onBack, locale }: { onBack: () => void; locale: SupportLocale }) => (
   <button
     type='button'
-    className='scw-icon-button scw-pane__back'
+    className={iconButtonHiddenUntilMobile}
     aria-label={locale.back}
     onClick={onBack}
   >

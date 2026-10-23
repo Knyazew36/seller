@@ -71,7 +71,10 @@ const envSchema = z
     // --- Мессенджеры (src/messengers). Не заданы — канал тихо не подключается,
     // см. messengers/app-messengers.ts. ---
     TG_BOT_TOKEN: optionalString,
-    TG_BOT_NAME: optionalString,
+    // Из имени собираются ссылки https://t.me/<name>; с @ Telegram уводит на telegram.org.
+    TG_BOT_NAME: optionalString.refine((v) => !v?.startsWith('@'), {
+      message: 'TG_BOT_NAME указывается без @ (my_bot, не @my_bot)',
+    }),
     MAX_BOT_TOKEN: optionalString,
     MAX_BOT_NAME: optionalString,
     VK_BOT_TOKEN: optionalString,

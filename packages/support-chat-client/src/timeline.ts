@@ -1,4 +1,9 @@
-import { SUPPORT_LIMITS, type SupportCursorPage, type SupportMessage } from '@app/support-chat-core'
+import {
+  SUPPORT_LIMITS,
+  type SupportCursorPage,
+  type SupportMessage,
+  type SupportMessageReply,
+} from '@app/support-chat-core'
 
 import { SupportApiError } from './http'
 import { StateStore } from './state-store'
@@ -51,6 +56,8 @@ interface OutboxEntry {
   previews: string[]
   /** Дополнительные поля формы: conversationId, isInternalNote. */
   extra: Record<string, string>
+  /** Цитата для ленты, пока сервер не подтвердил; на сервер уходит только id. */
+  replyTo: SupportMessageReply | null
   createdAt: string
   attempts: number
   status: 'sending' | 'failed'
@@ -58,10 +65,22 @@ interface OutboxEntry {
   inFlight: boolean
 }
 
-type PersistedEntry = Pick<OutboxEntry, 'clientMessageId' | 'text' | 'extra' | 'createdAt'>
+type PersistedEntry = Pick<OutboxEntry, 'clientMessageId' | 'text' | 'extra' | 'createdAt'> &
+  Partial<Pick<OutboxEntry, 'replyTo'>>
 
 const RETRY_BASE_MS = 1000
 const RETRY_MAX_MS = 30_000
+
+/** Цитата из сообщения ленты — для ответа на него. */
+export const toSupportReply = (message: SupportMessage): SupportMessageReply => ({
+  id: message.id,
+  seq: message.seq,
+  author: message.author,
+  authorName: message.authorName,
+  text: message.text,
+  attachmentsCount: message.attachments.length,
+  deletedAt: message.deletedAt,
+})
 
 /**
  * Лента одного диалога. Источник правды — сервер: сокет приносит подсказки (apply), пропуски в seq
@@ -156,6 +175,20 @@ export class SupportTimeline {
     }
   }
 
+  /** Догрузить историю вверх, пока в ленте не окажется seq (переход к цитате). false — не нашлось. */
+  public async loadUntil(seq: number): Promise<boolean> {
+    const generation = this.generation
+    const firstSeq = () => Math.min(...[...this.confirmed.values()].map(message => message.seq))
+    for (;;) {
+      const before = firstSeq()
+      if (before <= seq) return true
+      if (!this.store.getState().hasMoreBefore || generation !== this.generation) return false
+      await this.loadOlder()
+      // loadOlder молча выходит, если уже грузится или запрос упал — без продвижения не крутимся
+      if (firstSeq() >= before) return false
+    }
+  }
+
   /** Добрать всё, что новее afterSeq (по умолчанию — последнего известного). Параллельные вызовы склеиваются. */
   public sync(afterSeq?: number): Promise<void> {
     if (this.conversationId === null) return Promise.resolve()
@@ -184,13 +217,19 @@ export class SupportTimeline {
   // ── Отправка ───────────────────────────────────────────────────────────────
 
   /** Поставить в очередь. Возвращает ключ сообщения в ленте. */
-  public send(text: string, files: File[] = [], extra: Record<string, string> = {}): string {
+  public send(
+    text: string,
+    files: File[] = [],
+    extra: Record<string, string> = {},
+    replyTo: SupportMessageReply | null = null,
+  ): string {
     const entry: OutboxEntry = {
       clientMessageId: createId(),
       text: text.trim(),
       files,
       previews: files.map(file => URL.createObjectURL(file)),
       extra,
+      replyTo,
       createdAt: new Date().toISOString(),
       attempts: 0,
       status: 'sending',
@@ -327,6 +366,7 @@ export class SupportTimeline {
     const form = new FormData()
     if (entry.text) form.append('text', entry.text)
     form.append('clientMessageId', entry.clientMessageId)
+    if (entry.replyTo) form.append('replyToId', String(entry.replyTo.id))
     Object.entries(entry.extra).forEach(([key, value]) => form.append(key, value))
     entry.files.forEach(file => form.append('files', file))
     return form
@@ -376,6 +416,7 @@ export class SupportTimeline {
           mime: file.type,
           size: file.size,
         })),
+        replyTo: entry.replyTo,
         editedAt: null,
         deletedAt: null,
         createdAt: entry.createdAt,
@@ -391,6 +432,7 @@ export class SupportTimeline {
     if (!persist) return []
     return readJson<PersistedEntry[]>(persist.storage, persist.key, []).map(item => ({
       ...item,
+      replyTo: item.replyTo ?? null,
       files: [],
       previews: [],
       attempts: 0,
@@ -405,7 +447,13 @@ export class SupportTimeline {
     if (!persist) return
     const entries: PersistedEntry[] = this.outbox
       .filter(entry => entry.files.length === 0 && entry.status === 'sending')
-      .map(({ clientMessageId, text, extra, createdAt }) => ({ clientMessageId, text, extra, createdAt }))
+      .map(({ clientMessageId, text, extra, createdAt, replyTo }) => ({
+        clientMessageId,
+        text,
+        extra,
+        createdAt,
+        replyTo,
+      }))
     if (entries.length) persist.storage.set(persist.key, JSON.stringify(entries))
     else persist.storage.remove(persist.key)
   }
