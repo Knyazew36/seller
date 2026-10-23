@@ -65,6 +65,8 @@ export class SupportTelegramBridge
     `${ENTITY_EMOJI.support} ${SupportTelegramBridge.name}`,
   );
   private readonly chatId: string | null;
+  /** Подпись проекта в названии темы: в одну группу могут писать несколько проектов. */
+  private readonly project: string;
   private subscription?: Subscription;
   /** Создание темы на диалог: параллельные сообщения ждут одну и ту же тему, а не плодят свои. */
   private readonly creating = new Map<number, Promise<SupportTelegramTopic>>();
@@ -82,6 +84,10 @@ export class SupportTelegramBridge
     @Optional() private readonly bot?: TelegramBotService,
   ) {
     this.chatId = config.get<string>('SUPPORT_TG_CHAT_ID')?.trim() || null;
+    this.project =
+      config.get<string>('SUPPORT_TG_PROJECT')?.trim() ||
+      config.get<string>('APP_NAME') ||
+      'App';
   }
 
   // ── Жизненный цикл ─────────────────────────────────────────────────────────
@@ -337,7 +343,10 @@ export class SupportTelegramBridge
 
     const forum = await this.bot!.api.createForumTopic(
       this.chatId!,
-      `#${conversation.id} · ${name}`.slice(0, TOPIC_TITLE_MAX),
+      `${this.project} · #${conversation.id} · ${name}`.slice(
+        0,
+        TOPIC_TITLE_MAX,
+      ),
     );
     const topic = await this.prisma.supportTelegramTopic.create({
       data: {
@@ -361,6 +370,7 @@ export class SupportTelegramBridge
       topic,
       [
         `🆕 Обращение #${conversation.id} — ${name}`,
+        `Проект: ${this.project}`,
         ...details,
         '',
         'Пишите прямо в эту тему — ответ уйдёт клиенту.',

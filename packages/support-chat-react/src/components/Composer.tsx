@@ -114,8 +114,8 @@ export const Composer = ({
   return (
     <div
       className={cx(
-        'scw:flex-none scw:border-t scw:border-border scw:px-2.5 scw:pt-2 scw:pb-2.5',
-        note ? 'scw:bg-note-bubble' : 'scw:bg-bg',
+        'scw:flex-none scw:border-t scw:p-3 scw:transition-colors',
+        note ? 'scw:border-note-text/15 scw:bg-note-bubble' : 'scw:border-border/70 scw:bg-bg',
       )}
     >
       {replyTo && (
@@ -169,7 +169,15 @@ export const Composer = ({
           ))}
         </div>
       )}
-      <div className='scw:flex scw:items-end scw:gap-1'>
+      <div
+        className={cx(
+          'scw:flex scw:items-end scw:gap-0.5 scw:rounded-[22px] scw:p-1 scw:transition-[background-color,box-shadow] scw:duration-150',
+          // В фокусе поле «поднимается»: светлеет и получает тонкий контур
+          note
+            ? 'scw:bg-white/55'
+            : 'scw:bg-surface scw:focus-within:bg-bg scw:focus-within:shadow-[0_0_0_1px_var(--scw-border),0_1px_3px_rgb(16_18_20/0.06)]',
+        )}
+      >
         <button
           type='button'
           className={iconButton}
@@ -209,15 +217,19 @@ export const Composer = ({
         />
         <button
           type='button'
-          className='scw:inline-flex scw:size-9 scw:flex-none scw:items-center scw:justify-center scw:rounded-full scw:bg-accent scw:text-accent-text scw:transition-transform scw:duration-100 scw:enabled:active:scale-94'
+          className={cx(
+            'scw:inline-flex scw:size-9 scw:flex-none scw:items-center scw:justify-center scw:rounded-full scw:transition-[background-color,color,transform] scw:duration-150',
+            // Заливка — только когда есть что отправить: пустое поле не зовёт нажать
+            canSend ? 'scw:bg-accent scw:text-accent-text scw:active:scale-94' : 'scw:bg-transparent scw:text-muted',
+          )}
           aria-label={locale.send}
           title={locale.send}
           disabled={!canSend}
           onClick={submit}
         >
           <SendIcon
-            width={20}
-            height={20}
+            width={18}
+            height={18}
             strokeWidth={2.4}
           />
         </button>

@@ -49,6 +49,7 @@ export interface MessageListProps {
   /** Имя клиента для его аватарки (в инбоксе оператора). */
   contactName?: string
   empty?: ReactNode
+  className?: string
 }
 
 /** Насколько близко к низу считаем «пользователь читает последнее» — тогда докручиваем к новым. */
@@ -60,6 +61,7 @@ const SWIPE_MAX_PX = 80
 const FLASH_MS = 1600
 
 const centerNote = 'scw:my-2 scw:self-center scw:text-center scw:text-xs scw:text-muted'
+const dayPill = 'scw:mt-3 scw:mb-2 scw:self-center scw:text-2xs scw:font-medium scw:tracking-[0.02em] scw:text-muted'
 
 const groupKey = (message: SupportTimelineMessage) => `${message.author}:${message.authorId ?? ''}`
 const fileKey = (message: SupportTimelineMessage, fileId: number) => `${message.key}:${fileId}`
@@ -183,12 +185,22 @@ export const MessageList = (props: MessageListProps) => {
   return (
     <div
       ref={scrollRef}
-      // overflow-x-hidden — значок ответа при свайпе выезжает из-за края и не должен давать прокрутку вбок
-      className='scw:flex scw:min-h-0 scw:flex-1 scw:flex-col scw:gap-1 scw:overflow-x-hidden scw:overflow-y-auto scw:overscroll-contain scw:p-4'
+      className={cx(
+        // overflow-x-hidden — значок ответа при свайпе выезжает из-за края и не должен давать прокрутку вбок.
+        // scrollbar-gutter — место под полосу прокрутки занято сразу: появилась полоса — пузыри не сдвигаются вбок.
+        // overflow-anchor: none — позицию при догрузке истории держим сами, иначе браузер сдвинет ещё раз
+        'scw:flex scw:min-h-0 scw:flex-1 scw:flex-col scw:gap-1 scw:overflow-x-hidden scw:overflow-y-auto scw:overscroll-contain scw:p-4 scw:[overflow-anchor:none] scw:[scrollbar-gutter:stable] scw:[scrollbar-width:thin]',
+        props.className,
+      )}
       onScroll={onScroll}
       role='log'
       aria-live='polite'
     >
+      {/* Прижимает сообщения к низу, как в мессенджерах: пока их мало, они растут снизу вверх, а не прыгают, когда начинается прокрутка */}
+      <div
+        className='scw:mt-auto'
+        aria-hidden
+      />
       {props.loadingOlder && (
         <div className={cx(centerNote, 'scw:inline-flex scw:items-center scw:gap-2')}>
           <span className={cx(spinner, 'scw:size-3.5')} />
@@ -219,7 +231,7 @@ export const MessageList = (props: MessageListProps) => {
 
         return (
           <Fragment key={message.key}>
-            {newDay && <div className={centerNote}>{formatDay(message.createdAt, locale)}</div>}
+            {newDay && <div className={dayPill}>{formatDay(message.createdAt, locale)}</div>}
             {message.author === 'SYSTEM' ? (
               <div className={cx(centerNote, 'scw:max-w-[80%] scw:rounded-full scw:bg-surface scw:px-2.5 scw:py-1')}>{message.text}</div>
             ) : (
@@ -426,7 +438,7 @@ const MessageBubble = ({
         {avatar}
         <div
           className={cx(
-            'scw:relative scw:min-w-0 scw:rounded-message scw:px-3 scw:py-2 scw:wrap-anywhere',
+            'scw:relative scw:min-w-0 scw:animate-bubble scw:rounded-message scw:px-3.5 scw:py-2 scw:wrap-anywhere',
             message.isInternalNote
               ? 'scw:bg-note-bubble scw:text-note-text'
               : own

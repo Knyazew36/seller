@@ -5,12 +5,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { cx } from '../cx'
 import { ChatIcon, CloseIcon, HeadsetIcon } from '../icons'
 import { mergeLocale, type SupportLocaleOverride } from '../locale'
-import { badge, button, dot, iconButtonInverse, state as stateUi, typing } from '../ui'
+import { button, iconButton, state as stateUi, typing } from '../ui'
 import { useStoreState } from '../use-store'
 
-import { Avatar } from './Avatar'
 import { Composer } from './Composer'
 import { MessageList } from './MessageList'
+import { TypingDots } from './TypingDots'
 
 export interface SupportWidgetProps {
   client: SupportVisitorClient
@@ -21,6 +21,8 @@ export interface SupportWidgetProps {
   startOnMount?: boolean
   /** Отступ кнопки от края, если внизу страницы своя панель (мобильное меню). */
   offsetBottom?: number
+  /** Открыть окно сразу, без нажатия на кнопку. */
+  defaultOpen?: boolean
   className?: string
 }
 
@@ -31,12 +33,13 @@ export const SupportWidget = ({
   locale: localeOverride,
   startOnMount = true,
   offsetBottom,
+  defaultOpen = false,
   className,
 }: SupportWidgetProps) => {
   const locale = useMemo(() => mergeLocale(localeOverride), [localeOverride])
   const state = useStoreState(client.store)
   const timeline = useStoreState(client.timeline.store)
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
   const [replyTo, setReplyTo] = useState<SupportTimelineMessage | null>(null)
 
   // Новый диалог (прошлый закрыли) — цитата из старого уже ни к чему
@@ -69,6 +72,8 @@ export const SupportWidget = ({
 
   // «Подключение…» клиенту не показываем: сообщения и так ждут в очереди и уйдут, когда связь вернётся
   const subtitle = state.operatorsOnline > 0 ? locale.operatorsOnline : locale.operatorsOffline
+  const online = state.operatorsOnline > 0 && state.connected
+  const unread = open ? 0 : state.unread
 
   return (
     <div
@@ -81,37 +86,46 @@ export const SupportWidget = ({
       {open && (
         <section
           className={cx(
-            'scw:flex scw:h-[min(600px,calc(100dvh_-_120px))] scw:w-95 scw:animate-pop scw:flex-col scw:overflow-hidden scw:rounded-3xl scw:border scw:border-border scw:bg-bg scw:shadow-panel',
+            'scw:relative scw:flex scw:h-[min(620px,calc(100dvh_-_120px))] scw:w-95 scw:animate-pop scw:flex-col scw:overflow-hidden scw:rounded-[20px] scw:bg-bg scw:shadow-panel',
             // На телефоне окно на весь экран
             'scw:max-[480px]:fixed scw:max-[480px]:inset-0 scw:max-[480px]:h-dvh scw:max-[480px]:w-auto scw:max-[480px]:rounded-none scw:max-[480px]:border-0',
           )}
           role='dialog'
           aria-label={locale.title}
         >
-          <header className='scw:flex scw:flex-none scw:items-center scw:gap-3 scw:bg-own-bubble scw:py-3.5 scw:pr-3 scw:pl-4.5 scw:text-own-text'>
-            <Avatar
-              name={locale.title}
-              icon={<HeadsetIcon />}
-            />
-            <div className='scw:flex scw:min-w-0 scw:flex-1 scw:flex-col'>
-              <span className='scw:text-lg scw:font-bold'>{locale.title}</span>
-              <span className='scw:inline-flex scw:items-center scw:gap-1.5 scw:text-xs scw:opacity-75'>
-                <span className={dot(state.operatorsOnline > 0 && state.connected)} />
-                {subtitle}
-              </span>
+          {/* Шапка поверх ленты, полупрозрачная: сообщения уходят под неё при прокрутке — объём без декора */}
+          <header className='scw:absolute scw:inset-x-0 scw:top-0 scw:z-10 scw:flex scw:h-16 scw:items-center scw:gap-3 scw:border-b scw:border-border/60 scw:bg-bg/80 scw:pr-2.5 scw:pl-4 scw:backdrop-blur-xl scw:backdrop-saturate-150'>
+            <span className='scw:relative scw:inline-flex scw:size-10 scw:flex-none scw:items-center scw:justify-center scw:rounded-full scw:bg-accent scw:text-accent-text'>
+              <HeadsetIcon
+                width={20}
+                height={20}
+              />
+              <span
+                className={cx(
+                  'scw:absolute scw:right-0 scw:bottom-0 scw:size-2.5 scw:rounded-full scw:ring-2 scw:ring-bg',
+                  online ? 'scw:bg-success' : 'scw:bg-muted',
+                )}
+              />
+            </span>
+            <div className='scw:flex scw:min-w-0 scw:flex-1 scw:flex-col scw:gap-1'>
+              <span className='scw:text-md scw:leading-none scw:font-semibold scw:tracking-[-0.01em]'>{locale.title}</span>
+              <span className='scw:truncate scw:text-xs scw:leading-none scw:text-muted'>{subtitle}</span>
             </div>
             <button
               type='button'
-              className={iconButtonInverse}
+              className={iconButton}
               aria-label={locale.closeLabel}
               onClick={() => setOpen(false)}
             >
-              <CloseIcon />
+              <CloseIcon
+                width={18}
+                height={18}
+              />
             </button>
           </header>
 
           {state.status === 'error' ? (
-            <div className={stateUi.root}>
+            <div className={cx(stateUi.root, 'scw:pt-16')}>
               <div className={stateUi.title}>{locale.errorTitle}</div>
               <div className={stateUi.text}>{state.error}</div>
               <button
@@ -124,6 +138,8 @@ export const SupportWidget = ({
             </div>
           ) : (
             <MessageList
+              // Отступ под шапку: она лежит поверх ленты
+              className='scw:pt-20'
               messages={messages}
               ownAuthor='CONTACT'
               otherReadSeq={conversation?.operatorReadSeq ?? 0}
@@ -141,11 +157,12 @@ export const SupportWidget = ({
               empty={
                 !timeline.loading && (
                   <div className={stateUi.root}>
-                    <ChatIcon
-                      width={32}
-                      height={32}
-                      className={stateUi.icon}
-                    />
+                    <span className='scw:mb-2 scw:inline-flex scw:size-12 scw:items-center scw:justify-center scw:rounded-full scw:bg-surface scw:text-text'>
+                      <ChatIcon
+                        width={22}
+                        height={22}
+                      />
+                    </span>
                     <div className={stateUi.title}>{locale.emptyTitle}</div>
                     <div className={stateUi.text}>{locale.emptyText}</div>
                   </div>
@@ -154,6 +171,7 @@ export const SupportWidget = ({
               footer={
                 state.operatorTyping !== null && (
                   <div className={typing}>
+                    <TypingDots />
                     {locale.operatorTyping}
                   </div>
                 )
@@ -180,11 +198,11 @@ export const SupportWidget = ({
       <button
         type='button'
         className={cx(
-          'scw:relative scw:inline-flex scw:size-14 scw:items-center scw:justify-center scw:rounded-full scw:bg-accent scw:text-accent-text scw:shadow-panel scw:transition-transform scw:hover:scale-105',
+          'scw:relative scw:inline-flex scw:size-14 scw:items-center scw:justify-center scw:rounded-full scw:bg-accent scw:text-accent-text scw:shadow-launcher scw:transition-transform scw:duration-200 scw:hover:-translate-y-0.5 scw:active:translate-y-0',
           // Окно на телефоне во весь экран, у него свой крестик
           open && 'scw:max-[480px]:hidden',
         )}
-        aria-label={open ? locale.closeLabel : locale.launcherLabel}
+        aria-label={open ? locale.closeLabel : unread ? `${locale.launcherLabel}: ${unread}` : locale.launcherLabel}
         aria-expanded={open}
         onClick={() => setOpen(value => !value)}
       >
@@ -195,20 +213,26 @@ export const SupportWidget = ({
             <span className={cx(ring, 'scw:[animation-delay:0.9s]')} />
           </>
         )}
-        {open ? (
-          <CloseIcon
-            width={26}
-            height={26}
-          />
-        ) : (
-          <ChatIcon
-            width={26}
-            height={26}
-          />
-        )}
-        {!open && state.unread > 0 && (
-          <span className={cx(badge, 'scw:absolute scw:-top-0.5 scw:-right-0.5 scw:border-2 scw:border-bg')}>{state.unread > 99 ? '99+' : state.unread}</span>
-        )}
+        {/* key — чтобы при смене (и при каждом новом непрочитанном) содержимое заново проигрывало появление */}
+        <span
+          key={open ? 'close' : unread ? `unread-${unread}` : 'chat'}
+          className='scw:inline-flex scw:animate-swap'
+        >
+          {open ? (
+            <CloseIcon
+              width={26}
+              height={26}
+            />
+          ) : unread ? (
+            // Число вместо значка: заметнее отдельного бейджа в углу
+            <span className='scw:text-lg scw:font-semibold scw:tabular-nums'>{unread > 99 ? '99+' : unread}</span>
+          ) : (
+            <ChatIcon
+              width={26}
+              height={26}
+            />
+          )}
+        </span>
       </button>
     </div>
   )

@@ -24,9 +24,6 @@ export const iconButtonHiddenUntilMobile = cx(
   'scw:text-muted scw:enabled:hover:bg-surface scw:enabled:hover:text-text',
 )
 
-/** На тёмной шапке: цвет от шапки, подсветка полупрозрачным белым. */
-export const iconButtonInverse = cx('scw:inline-flex', iconButtonBase, 'scw:enabled:hover:bg-white/14')
-
 const buttonBase =
   'scw:inline-flex scw:h-8.5 scw:items-center scw:justify-center scw:whitespace-nowrap scw:rounded-ui scw:border scw:px-3.5 scw:font-semibold'
 
@@ -69,4 +66,5 @@ export const spinner =
   'scw:inline-block scw:flex-none scw:animate-spin scw:rounded-full scw:border-2 scw:border-border scw:border-t-accent scw:motion-reduce:animate-none'
 
 /** «печатает…» под лентой. */
-export const typing = 'scw:mx-1 scw:mt-1 scw:self-start scw:text-xs scw:italic scw:text-muted'
+export const typing =
+  'scw:mt-1 scw:inline-flex scw:animate-bubble scw:items-center scw:gap-2 scw:self-start scw:rounded-full scw:bg-other-bubble scw:px-3 scw:py-2 scw:text-xs scw:text-muted'

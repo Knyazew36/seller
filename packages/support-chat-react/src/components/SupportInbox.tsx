@@ -29,6 +29,7 @@ import { useStoreState } from '../use-store'
 import { Avatar } from './Avatar'
 import { Composer } from './Composer'
 import { MessageList } from './MessageList'
+import { TypingDots } from './TypingDots'
 
 export interface SupportInboxProps {
   client: SupportOperatorClient
@@ -465,7 +466,14 @@ const ConversationView = ({
         locale={locale}
         showAuthorNames
         contactName={name}
-        footer={contactTyping && <div className={typingLine}>{`${name} ${locale.typing}`}</div>}
+        footer={
+          contactTyping && (
+            <div className={typingLine}>
+              <TypingDots />
+              {`${name} ${locale.typing}`}
+            </div>
+          )
+        }
       />
 
       <Composer
