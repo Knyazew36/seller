@@ -19,7 +19,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "examples"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json && tailwindcss -i src/styles.css -o dist/styles.css --minify",

@@ -15,7 +15,9 @@
   "files": [
     "dist",
     "prisma",
-    "README.md"
+    "README.md",
+    "examples",
+    "INSTALL.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -29,6 +31,7 @@
     "@nestjs/common": ">=12",
     "@nestjs/core": ">=12",
     "@nestjs/platform-express": ">=12",
+    "@nestjs/platform-socket.io": ">=12",
     "@nestjs/swagger": ">=12",
     "@nestjs/throttler": ">=6",
     "@nestjs/websockets": ">=12",
