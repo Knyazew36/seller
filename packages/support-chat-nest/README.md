@@ -1,7 +1,7 @@
 # @app/support-chat-nest
 
 Чат поддержки для NestJS: REST посетителя и операторов, socket.io-неймспейс `/support`, сервисы.
-Всё проектное — хранилище, авторизация, файлы, оповещения — приходит через порты. Пакеты комплекта:
+Всё, что зависит от приложения, — хранилище, авторизация, файлы, оповещения — приходит через порты. Пакеты комплекта:
 
 | Пакет | Где | Что |
 | --- | --- | --- |
@@ -12,17 +12,17 @@
 
 ## Подключение
 
-1. Схема БД — скопировать `prisma/support.prisma` в схему проекта, сделать миграцию.
-2. Реализовать порты (пример — `apps/server/src/support/adapters` в seller-app):
+1. Схема БД — скопировать `prisma/support.prisma` в схему приложения, сделать миграцию.
+2. Реализовать порты — классы-провайдеры в приложении (интерфейсы и токены экспортируются из пакета):
 
 | Порт | Что делает |
 | --- | --- |
 | `SupportStore` | хранение; «не найдено» — `null`, `appendMessage` выдаёт `seq` под блокировкой строки диалога и не создаёт дубль по `clientMessageId` |
-| `SupportIdentity` | кто посетитель (необязательная авторизация проекта), кто оператор, оператор по id |
+| `SupportIdentity` | кто посетитель (необязательная авторизация приложения), кто оператор, оператор по id |
 | `SupportFileStorage` | настройки multer, проверка файла, перенос из временной папки, публичный URL |
 | `SupportNotifier` | необязательный: оповещения вне чата (мессенджеры, почта) |
 
-3. Подключить в `AppModule`:
+3. Подключить в `AppModule` (всё, кроме `SupportChatModule`, — классы приложения):
 
 ```ts
 SupportChatModule.forRoot({
@@ -30,18 +30,18 @@ SupportChatModule.forRoot({
   secret: process.env.SUPPORT_CHAT_SECRET!, // ≥ 32 символов — подпись токенов визита
   identitySecret: process.env.SUPPORT_IDENTITY_SECRET, // вход с подписью пользователя на чужом сайте
   allowedOrigins: origin => allowed.includes(origin), // проверка origin сокета
-  store: PrismaSupportStore,
-  identity: AppSupportIdentity,
-  files: AppSupportFileStorage,
-  notifier: AppSupportNotifier,
-  authGuard: MultiAuthGuard, // guard проекта, кладущий пользователя в req.user
-  imports: [UploadModule],
+  store: MySupportStore, // реализует SupportStore
+  identity: MySupportIdentity, // реализует SupportIdentity
+  files: MySupportFileStorage, // реализует SupportFileStorage
+  notifier: MySupportNotifier, // необязательный, реализует SupportNotifier
+  authGuard: MyAuthGuard, // guard приложения, кладущий пользователя в req.user
+  imports: [FilesModule], // модули, от которых зависят провайдеры портов
 })
 ```
 
-4. CORS проекта: разрешить заголовок `x-support-visit`. nginx: для `/socket.io/` нужны `Upgrade`/`Connection`.
+4. CORS приложения: разрешить заголовок `x-support-visit`. nginx: для `/socket.io/` нужны `Upgrade`/`Connection`.
 
-Ответы описаны в Swagger с конвертом `{ status, data, timestamp }` (`SupportApi`); если в проекте конверта нет — поправить декоратор.
+Ответы описаны в Swagger с конвертом `{ status, data, timestamp }` (`SupportApi`); если в приложении конверта нет — поправить декоратор.
 
 ## Транспорт
 
@@ -50,7 +50,7 @@ SupportChatModule.forRoot({
 
 | Посетитель (`x-support-visit`) | |
 | --- | --- |
-| `POST support/session` | вход: аноним по `anonymousKey`, пользователь проекта по его авторизации или `userId` + `userHash` |
+| `POST support/session` | вход: аноним по `anonymousKey`, пользователь приложения по его авторизации или `userId` + `userHash` |
 | `GET support/conversation/current` | текущий незакрытый диалог |
 | `GET support/message/list` | история: `beforeSeq` — вверх, `afterSeq` — добор |
 | `POST support/message/create` | multipart: `text`, `clientMessageId`, `files[]` |
@@ -62,7 +62,7 @@ SupportChatModule.forRoot({
 | `support/operator/conversation/*` | `create`, `list` (`filter_status`, `filter_assignee`, `filter_channel`, `search`, `add_contact`, `add_last_message`), `:id`, `update/:id`, `delete/:id`, `assign/:id`, `close/:id`, `reopen/:id`, `read` |
 | `support/operator/message/*` | `create` (+ `isInternalNote`), `list`, `:id`, `update/:id`, `delete/:id` |
 
-Сокет: `handshake.auth.visitToken` (посетитель) или `handshake.auth.authorization` — заголовок Authorization проекта целиком (оператор).
+Сокет: `handshake.auth.visitToken` (посетитель) или `handshake.auth.authorization` — заголовок Authorization приложения целиком (оператор).
 События — `SupportServerToClientEvents` в `@app/support-chat-core`. Заметки операторов посетителю не уходят.
 
 Доменные события (`SupportEvents.stream`) экспортируются — на них подписываются мосты в мессенджеры.

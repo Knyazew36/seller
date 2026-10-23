@@ -4,4 +4,4 @@
 события socket.io (`SupportServerToClientEvents`, `SupportClientToServerEvents`), лимиты (`SUPPORT_LIMITS`).
 Без зависимостей. Сборка двойная: CJS для Node (`require`), ESM для бандлеров (`import`).
 
-Описание всего комплекта — `packages/support-chat-nest/README.md`.
+Описание всего комплекта — в README пакета `@app/support-chat-nest`.

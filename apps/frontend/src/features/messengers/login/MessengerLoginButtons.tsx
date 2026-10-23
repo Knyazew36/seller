@@ -1,9 +1,12 @@
 import { useState } from 'react'
 
-import { type MessengerChannel, MESSENGERS, useMessengers } from '@/entities/messenger'
 import { Button } from '@/shared/ui/shadcn/animate-ui/components/buttons/button'
 
-import { MessengerIcon } from './MessengerIcon'
+import { useMessengers } from '../common/api'
+import { MESSENGERS } from '../common/channels'
+import { MessengerIcon } from '../common/MessengerIcon'
+import type { MessengerChannel } from '../common/types'
+
 import { MessengerLoginModal } from './MessengerLoginModal'
 
 // Кнопки «Войти через …» на странице входа — только для мессенджеров, подключённых на сервере

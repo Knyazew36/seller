@@ -1,5 +1,5 @@
-import type { MessengerChannel } from '@/entities/messenger'
-import { MaxIcon, TelegramIcon, VkIcon } from '@/shared/ui/icons/MessengerIcons'
+import { MaxIcon, TelegramIcon, VkIcon } from './icons'
+import type { MessengerChannel } from './types'
 
 const ICONS = { TELEGRAM: TelegramIcon, MAX: MaxIcon, VK: VkIcon } satisfies Record<MessengerChannel, unknown>
 

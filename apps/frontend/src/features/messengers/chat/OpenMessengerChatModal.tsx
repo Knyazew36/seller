@@ -1,10 +1,13 @@
 import { useEffect } from 'react'
 
-import { type MessengerChannel, MESSENGERS, useMessengers, useMessengerStatus } from '@/entities/messenger'
 import { useMe } from '@/entities/session'
 import { notifySuccess } from '@/shared/lib/notify'
-import { DeeplinkQr } from '@/shared/ui/kit/DeeplinkQr'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/shadcn/dialog'
+
+import { useMessengers, useMessengerStatus } from '../common/api'
+import { MESSENGERS } from '../common/channels'
+import { DeeplinkQr } from '../common/DeeplinkQr'
+import type { MessengerChannel } from '../common/types'
 
 type OpenMessengerChatModalProps = {
   channel: MessengerChannel

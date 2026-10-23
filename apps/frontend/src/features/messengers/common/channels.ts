@@ -1,6 +1,6 @@
 import type { Me } from '@/entities/session'
 
-import type { MessengerChannel } from '../types'
+import type { MessengerChannel } from './types'
 
 type MessengerMeta = {
   title: string

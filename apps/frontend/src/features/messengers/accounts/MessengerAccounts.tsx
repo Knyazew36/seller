@@ -2,17 +2,17 @@ import { CheckCircle2Icon, TriangleAlertIcon } from 'lucide-react'
 
 import { useState } from 'react'
 
-import {
-  type MessengerChannel,
-  MESSENGERS,
-  useMessengers,
-  useMessengerStatus,
-  useUnlinkMessenger,
-} from '@/entities/messenger'
-import { LinkMessengerModal, MessengerIcon, OpenMessengerChatModal } from '@/features/messengers'
 import { notifyError, notifySuccess } from '@/shared/lib/notify'
 import { ConfirmAction } from '@/shared/ui/kit/ConfirmAction'
 import { Button } from '@/shared/ui/shadcn/animate-ui/components/buttons/button'
+
+import { OpenMessengerChatModal } from '../chat/OpenMessengerChatModal'
+import { useMessengers, useMessengerStatus } from '../common/api'
+import { MESSENGERS } from '../common/channels'
+import { MessengerIcon } from '../common/MessengerIcon'
+import type { MessengerChannel } from '../common/types'
+import { useUnlinkMessenger } from '../link/api'
+import { LinkMessengerModal } from '../link/LinkMessengerModal'
 
 // Привязанные мессенджеры: вход без пароля, уведомления и ответы клиентам из группы поддержки.
 // Показываем только мессенджеры, подключённые на сервере

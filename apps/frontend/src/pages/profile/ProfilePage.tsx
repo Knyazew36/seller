@@ -10,6 +10,7 @@ import {
   useUpdateProfile,
   useUploadAvatar,
 } from '@/entities/session'
+import { MessengerAccounts } from '@/features/messengers'
 import { toAssetUrl } from '@/shared/api'
 import { displayName } from '@/shared/lib/format'
 import { notifyError, notifySuccess } from '@/shared/lib/notify'
@@ -19,8 +20,6 @@ import { PersonAvatar } from '@/shared/ui/kit/PersonAvatar'
 import { SectionCard } from '@/shared/ui/kit/Section'
 import { TextField } from '@/shared/ui/kit/TextField'
 import { Button } from '@/shared/ui/shadcn/animate-ui/components/buttons/button'
-
-import { MessengerAccounts } from './components/MessengerAccounts'
 
 // ── Профиль ─────────────────────────────────────────────────────────────────
 

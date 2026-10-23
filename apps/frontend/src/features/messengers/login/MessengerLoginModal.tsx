@@ -1,17 +1,15 @@
 import { useEffect } from 'react'
 
-import {
-  type MessengerChannel,
-  MESSENGERS,
-  useMessengerLoginStatus,
-  useStartMessengerLogin,
-} from '@/entities/messenger'
 import { setAccessToken } from '@/shared/api'
 import { notifyError, notifySuccess } from '@/shared/lib/notify'
-import { DeeplinkQr } from '@/shared/ui/kit/DeeplinkQr'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/shadcn/dialog'
 
-import { LinkStatus } from './LinkStatus'
+import { MESSENGERS } from '../common/channels'
+import { DeeplinkQr } from '../common/DeeplinkQr'
+import { LinkStatus } from '../common/LinkStatus'
+import type { MessengerChannel } from '../common/types'
+
+import { useMessengerLoginStatus, useStartMessengerLogin } from './api'
 
 type MessengerLoginModalProps = {
   channel: MessengerChannel
