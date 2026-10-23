@@ -62,6 +62,15 @@ export function matchesImageSignature(
 // пока не подтверждён commitToCategory в UploadService после успешной записи в БД
 const stagingDir = path.join(os.tmpdir(), 'app-staged-uploads');
 
+/**
+ * Путь во временной папке для файла, пришедшего не через multer (например, скачанного из Telegram).
+ * Имя — uuid + расширение по mime, как у загрузок с сайта; дальше тот же путь: проверка → commitToCategory.
+ */
+export function stagedUploadPath(mimeType: string): string {
+  fs.mkdirSync(stagingDir, { recursive: true });
+  return path.join(stagingDir, generateSafeFilename(mimeType));
+}
+
 export function imageUploadInterceptorOptions(): MulterOptions {
   fs.mkdirSync(stagingDir, { recursive: true });
   const maxFileSize = Number(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024;

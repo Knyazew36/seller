@@ -9,6 +9,8 @@ import { VkAuthStrategy } from '@/messengers/vk';
 import { UserModule } from '@/user/user.module';
 
 import { AppMessengerAccountsService } from './app-messenger-accounts.service';
+import { AppMessengersController } from './app-messengers.controller';
+import { TelegramGroupRouter } from './telegram-group-router';
 
 /**
  * Подключает стратегии мини-приложений (Authorization: tma/max/vk …) к MultiAuthGuard проекта.
@@ -44,7 +46,12 @@ export class MessengerAuthStrategiesRegistrar implements OnModuleInit {
  */
 @Module({
   imports: [UserModule],
-  providers: [AppMessengerAccountsService, MessengerAuthStrategiesRegistrar],
-  exports: [AppMessengerAccountsService],
+  controllers: [AppMessengersController],
+  providers: [
+    AppMessengerAccountsService,
+    MessengerAuthStrategiesRegistrar,
+    TelegramGroupRouter,
+  ],
+  exports: [AppMessengerAccountsService, TelegramGroupRouter],
 })
 export class AppMessengersSupportModule {}

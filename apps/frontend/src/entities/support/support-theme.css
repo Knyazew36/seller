@@ -1,0 +1,29 @@
+/* Чат поддержки (@app/support-chat-react) в цветах DESIGN.md: переменные пакета → токены проекта */
+@import '@app/support-chat-react/styles.css';
+
+.scw-root {
+  --scw-font: var(--font-sans);
+  --scw-bg: var(--background);
+  --scw-surface: var(--mist);
+  --scw-border: var(--border);
+  --scw-text: var(--foreground);
+  --scw-muted: var(--muted-foreground);
+  /* coral — главное действие, teal — бренд. Хексы из DESIGN.md: в @theme inline переменных цветов нет */
+  --scw-accent: #fa3556;
+  --scw-accent-text: #ffffff;
+  --scw-action: var(--foreground);
+  --scw-action-text: var(--background);
+  --scw-own-bubble: var(--foreground);
+  --scw-own-text: var(--background);
+  --scw-other-bubble: var(--mist);
+  --scw-other-text: var(--foreground);
+  --scw-danger: #e02a49;
+  --scw-success: #1ebfbf;
+}
+
+/* На мобильном внизу кабинета плавающее меню — кнопка чата встаёт над ним */
+@media (max-width: 767px) {
+  .scw-widget {
+    --scw-offset-bottom: 104px;
+  }
+}

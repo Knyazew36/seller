@@ -1,0 +1,6 @@
+export { Composer, type ComposerProps } from './components/Composer'
+export { MessageList, type MessageListProps } from './components/MessageList'
+export { SupportInbox, type SupportInboxProps } from './components/SupportInbox'
+export { SupportWidget, type SupportWidgetProps } from './components/SupportWidget'
+export { mergeLocale, RU_LOCALE, type SupportLocale, type SupportLocaleOverride } from './locale'
+export { useStoreState } from './use-store'

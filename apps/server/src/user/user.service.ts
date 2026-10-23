@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -10,6 +11,7 @@ import { paginatePrisma } from '@/common/prisma/prisma-paginate';
 import { PaginationQueryDto } from '@/common/type';
 import { ENTITY_EMOJI } from '@/common/utils';
 import { Prisma, User } from '@/generated/prisma/client';
+import type { MessengerChannelKey } from '@/messengers';
 import { PrismaService } from 'prisma/prisma.service';
 
 import { UploadService } from '../upload/upload.service';
@@ -17,6 +19,16 @@ import { UploadService } from '../upload/upload.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+
+/** Колонки User каждого мессенджера: id аккаунта и сырой профиль. */
+const MESSENGER_COLUMNS = {
+  TELEGRAM: { id: 'telegramId', profile: 'telegramData' },
+  MAX: { id: 'maxId', profile: 'maxData' },
+  VK: { id: 'vkId', profile: 'vkData' },
+} as const satisfies Record<
+  MessengerChannelKey,
+  { id: keyof User; profile: keyof User }
+>;
 
 // passwordHash и сырые профили мессенджеров наружу не отдаём
 const PUBLIC_USER_OMIT = {
@@ -217,6 +229,46 @@ export class UserService {
       this.uploadService.deleteByRelativePath(user.avatarPath);
     }
     this.logger.log(`Обновлён аватар userId=${userId}`);
+  }
+
+  /**
+   * Отвязка мессенджера от своего аккаунта. Нельзя, если это последний способ войти (нет других
+   * мессенджеров и нет email с паролем) — иначе доступ к аккаунту теряется навсегда. Оба условия —
+   * в where самой мутации: не прошло (не привязан или последний способ) — P2025.
+   * Маркеры чата в User.data остаются, но без id мессенджера ни на что не влияют (canDeliver).
+   */
+  public async unlinkMessenger(
+    userId: number,
+    channel: MessengerChannelKey,
+  ): Promise<void> {
+    const { id, profile } = MESSENGER_COLUMNS[channel];
+    const otherLogins: Prisma.UserWhereInput[] = [
+      ...(Object.keys(MESSENGER_COLUMNS) as MessengerChannelKey[])
+        .filter((other) => other !== channel)
+        .map((other) => ({ [MESSENGER_COLUMNS[other].id]: { not: null } })),
+      { email: { not: null }, passwordHash: { not: null } },
+    ];
+
+    try {
+      await this.prisma.user.update({
+        where: { id: userId, [id]: { not: null }, OR: otherLogins },
+        data: { [id]: null, [profile]: Prisma.JsonNull },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        this.logger.warn(
+          `Отвязка ${channel} отклонена userId=${userId}: не привязан или это последний способ входа`,
+        );
+        throw new BadRequestException(
+          'Нельзя отвязать: мессенджер не привязан или это единственный способ входа. Задайте пароль или привяжите другой мессенджер',
+        );
+      }
+      throw error;
+    }
+    this.logger.log(`Отвязан ${channel} userId=${userId}`);
   }
 
   // ── Слияние аккаунтов ───────────────────────────────────────────────────

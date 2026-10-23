@@ -2,6 +2,9 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { ENTITY_EMOJI } from '@/common/utils';
 import { OrgRole } from '@/generated/prisma/client';
+import { isMaxDialogOpen } from '@/messengers/max';
+import { isTelegramDialogOpen } from '@/messengers/telegram';
+import { isVkDialogOpen } from '@/messengers/vk';
 import { PrismaService } from 'prisma/prisma.service';
 
 import { UploadService } from '../upload/upload.service';
@@ -82,6 +85,7 @@ export class AuthService {
         vkId: true,
         telegramId: true,
         maxId: true,
+        data: true,
         createdAt: true,
         orgMemberships: {
           select: {
@@ -129,6 +133,12 @@ export class AuthService {
       vkId: user.vkId,
       telegramId: user.telegramId,
       maxId: user.maxId,
+      // Привязка и открытый чат с ботом — разное: без открытого чата мессенджер не даёт боту написать первым
+      messengerDialogs: {
+        telegram: isTelegramDialogOpen(user.data),
+        max: isMaxDialogOpen(user.data),
+        vk: isVkDialogOpen(user.data),
+      },
       createdAt: user.createdAt,
       capabilities: this.computeCapabilities(context),
       organizations,

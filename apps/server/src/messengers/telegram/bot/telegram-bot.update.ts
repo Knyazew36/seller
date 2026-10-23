@@ -26,7 +26,8 @@ import {
  * раньше @On('message'), иначе /start уйдёт в обработчик сообщений. Свои кнопки и сообщения
  * проект обрабатывает в TelegramAppAdapter.onCallback / onMessage, а не вторым @On.
  *
- * Работаем только с личными чатами: в группах бот уведомлений не шлёт и вход не ведёт.
+ * Сам модуль работает только с личными чатами. Сообщения и кнопки групп целиком отдаются проекту
+ * (TelegramAppAdapter.onGroupMessage / onGroupCallback).
  */
 @Update()
 export class TelegramBotUpdate {
@@ -106,6 +107,14 @@ export class TelegramBotUpdate {
     }
 
     try {
+      // Кнопки в группах — целиком проекта: аккаунты по нажатиям в группе не заводим
+      const chatType = query?.message?.chat.type;
+      if (chatType && chatType !== 'private') {
+        const handled = await this.adapter.onGroupCallback(ctx);
+        if (!handled) await ctx.answerCbQuery('Кнопка устарела');
+        return;
+      }
+
       if (payload.startsWith(TELEGRAM_CALLBACK.loginConfirm)) {
         return await this.confirmLogin(
           ctx,
@@ -174,6 +183,14 @@ export class TelegramBotUpdate {
   /** Любое сообщение пользователя: сначала даём шанс проекту (адаптер), иначе — приветствие. */
   @On('message')
   public async onMessage(@Ctx() ctx: Context): Promise<void> {
+    if (ctx.chat?.type === 'group' || ctx.chat?.type === 'supergroup') {
+      // id группы в логе — так его проще всего узнать при настройке (нужен для env фич, работающих с группами)
+      this.logger.log(
+        `message в группе chatId=${ctx.chat.id} (${ctx.chat.type}) «${ctx.chat.title}», telegramId=${ctx.from?.id}`,
+      );
+      await this.adapter.onGroupMessage(ctx);
+      return;
+    }
     if (ctx.chat?.type !== 'private' || !ctx.from) return;
     const telegramId = ctx.from.id;
     this.logger.log(`message от telegramId=${telegramId}`);

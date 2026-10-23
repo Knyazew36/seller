@@ -95,4 +95,19 @@ export abstract class TelegramAppAdapter {
   ): Promise<boolean> {
     return false;
   }
+
+  /**
+   * Сообщение в группе, где состоит бот (например, служебная группа операторов поддержки).
+   * Модуль сам с группами не работает и пользователей по ним не заводит — всё решает проект.
+   * Бот видит все сообщения группы, только если он в ней администратор (иначе — режим приватности).
+   */
+  public async onGroupMessage(_ctx: Context): Promise<void> {}
+
+  /**
+   * Нажатие кнопки под сообщением бота в группе.
+   * @returns true — обработано; false — модуль ответит, что кнопка устарела.
+   */
+  public async onGroupCallback(_ctx: Context): Promise<boolean> {
+    return false;
+  }
 }

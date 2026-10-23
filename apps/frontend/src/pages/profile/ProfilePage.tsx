@@ -20,6 +20,8 @@ import { SectionCard } from '@/shared/ui/kit/Section'
 import { TextField } from '@/shared/ui/kit/TextField'
 import { Button } from '@/shared/ui/shadcn/animate-ui/components/buttons/button'
 
+import { MessengerAccounts } from './components/MessengerAccounts'
+
 // ── Профиль ─────────────────────────────────────────────────────────────────
 
 const profileSchema = z.object({
@@ -246,6 +248,9 @@ const ProfilePage = () => {
           <AvatarForm me={me} />
           <ProfileForm me={me} />
         </div>
+      </SectionCard>
+      <SectionCard title='Мессенджеры'>
+        <MessengerAccounts />
       </SectionCard>
       <SectionCard title='Пароль'>
         <PasswordForm />

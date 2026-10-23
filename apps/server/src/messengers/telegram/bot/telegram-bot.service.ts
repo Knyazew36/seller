@@ -108,6 +108,14 @@ export class TelegramBotService implements OnApplicationBootstrap {
     }
   }
 
+  /**
+   * Клиент Bot API для того, чего нет в обёртках сервиса (темы групп, фото, файлы).
+   * Ошибки — TelegramError как есть.
+   */
+  public get api(): Telegraf['telegram'] {
+    return this.bot.telegram;
+  }
+
   // ── Клавиатуры ──────────────────────────────────────────────────────────
 
   /** Обёртка inline-клавиатуры для extra. */

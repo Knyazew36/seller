@@ -80,6 +80,18 @@ const envSchema = z
     VK_APP_ID: optionalString,
     VK_APP_SECRET: optionalString,
 
+    // --- Чат поддержки (src/support) ---
+    // Подпись токенов визита. Не задан — выводится из JWT_SECRET. Не короче 32 символов.
+    SUPPORT_CHAT_SECRET: optionalString.refine(
+      (value) => !value || value.length >= 32,
+      'SUPPORT_CHAT_SECRET должен быть не короче 32 символов',
+    ),
+    // Вход в виджет на чужом сайте с подписью пользователя (userHash). Не задан — такой вход выключен.
+    SUPPORT_IDENTITY_SECRET: optionalString,
+    // Telegram-супергруппа операторов с темами (id вида -100…). Не задан или неверный — мост в Telegram
+    // выключен с причиной в логе: необязательная функция не должна ронять старт сервера.
+    SUPPORT_TG_CHAT_ID: optionalString,
+
     // --- Кабинеты площадок (src/marketplace-account) ---
     // 32 байта в base64 — ключ шифрования ключей API площадок в БД. Не задан — подключить кабинет нельзя,
     // остальное приложение работает. Сгенерировать: openssl rand -base64 32

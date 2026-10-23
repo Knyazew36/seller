@@ -34,6 +34,8 @@ import { PrismaMessengerUserStore } from './messengers/adapters/prisma-messenger
 import { messengerIntegrations } from './messengers/app-messengers';
 import { NotificationsModule } from './notifications/notifications.module';
 import { OrganizationModule } from './organization/organization.module';
+import { supportChatModule } from './support/app-support';
+import { SupportTelegramModule } from './support/telegram/support-telegram.module';
 import { UploadModule } from './upload/upload.module';
 import { UserModule } from './user/user.module';
 
@@ -70,6 +72,9 @@ import { UserModule } from './user/user.module';
     NotificationsModule,
     AuditLogModule,
     ChatModule,
+    // Чат поддержки (packages/support-chat-nest), адаптеры проекта — src/support
+    supportChatModule(),
+    SupportTelegramModule,
 
     // Модули проекта подключаются ниже
 

@@ -13,6 +13,7 @@ export const ROUTES = {
 
   INVITE: '/invite/:token',
   WORKSPACES: '/workspaces',
+  SUPPORT: '/support',
 
   APP: '/app/:orgId',
   DASHBOARD: '/app/:orgId/dashboard',

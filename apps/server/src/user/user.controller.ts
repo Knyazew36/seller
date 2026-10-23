@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Swagger } from '@/common/decorators/swagger/swagger.decorator';
@@ -87,6 +88,33 @@ export class UserController {
     }
     this.uploadService.verifyImageSignatureOrThrow(file);
     await this.userService.setAvatar(userId, file);
+    return this.authService.getMe(userId);
+  }
+
+  // Привязка мессенджеров (…/link-*/start) — в их модулях (src/messengers/*/controller); здесь только
+  // отвязка: она про правила аккаунтов проекта (нельзя отвязать последний способ входа)
+
+  @Post('me/telegram/unlink')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Swagger({ title: 'Отвязать Telegram от своего аккаунта', bearerAuth: true })
+  async unlinkTelegram(@CurrentUser('id') userId: number) {
+    await this.userService.unlinkMessenger(userId, 'TELEGRAM');
+    return this.authService.getMe(userId);
+  }
+
+  @Post('me/max/unlink')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Swagger({ title: 'Отвязать MAX от своего аккаунта', bearerAuth: true })
+  async unlinkMax(@CurrentUser('id') userId: number) {
+    await this.userService.unlinkMessenger(userId, 'MAX');
+    return this.authService.getMe(userId);
+  }
+
+  @Post('me/vk/unlink')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Swagger({ title: 'Отвязать VK от своего аккаунта', bearerAuth: true })
+  async unlinkVk(@CurrentUser('id') userId: number) {
+    await this.userService.unlinkMessenger(userId, 'VK');
     return this.authService.getMe(userId);
   }
 

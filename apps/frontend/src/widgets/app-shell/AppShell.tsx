@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router'
 
 import { SidebarInset, SidebarProvider } from '@/shared/ui/shadcn/animate-ui/components/radix/sidebar'
+import { SupportChatWidget } from '@/widgets/support-widget/SupportChatWidget'
 
 import { AppSidebar } from './AppSidebar'
 import { MobileNav } from './MobileNav'
@@ -18,6 +19,7 @@ const AppShell = () => (
       </main>
     </SidebarInset>
     <MobileNav />
+    <SupportChatWidget />
   </SidebarProvider>
 )
 

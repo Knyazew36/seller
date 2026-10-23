@@ -32,6 +32,8 @@ export const appRoutes: AppRoute[] = [
 // ── Приватные вне оболочки кабинета ─────────────────────────────────────────
 export const privateRoutes: AppRoute[] = [
   { path: ROUTES.WORKSPACES, lazy: () => import('@/pages/workspaces/WorkspacesPage') },
+  // Операторы поддержки — платформенные админы; проверку делает сама страница (организация тут ни при чём)
+  { path: ROUTES.SUPPORT, lazy: () => import('@/pages/support/SupportPage') },
 ]
 
 // ── Гостевые: только без входа, иначе редирект на главную ───────────────────

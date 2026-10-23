@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router'
 import { z } from 'zod'
 
 import { useRegister } from '@/entities/session'
+import { MessengerLoginButtons } from '@/features/messengers'
 import { getApiErrorMessage } from '@/shared/api'
 import { type AuthLocationState, ROUTES } from '@/shared/config/paths'
 import { ErrorText } from '@/shared/ui/kit/ErrorText'
@@ -105,6 +106,7 @@ const RegisterPage = () => {
           Создать аккаунт
         </Button>
       </form>
+      <MessengerLoginButtons />
     </AuthLayout>
   )
 }

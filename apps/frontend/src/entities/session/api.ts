@@ -23,14 +23,18 @@ export const sessionKeys = {
 
 // ── Сессия ──────────────────────────────────────────────────────────────────
 
-/** Профиль текущего пользователя. Без токена запрос не уходит */
-export const useMe = () => {
+/**
+ * Профиль текущего пользователя. Без токена запрос не уходит.
+ * pollMs — опрашивать, пока ждём изменения, сделанного вне сайта (привязка мессенджера в чате с ботом)
+ */
+export const useMe = (pollMs?: number) => {
   const isAuthenticated = useIsAuthenticated()
   return useQuery({
     queryKey: sessionKeys.me,
     queryFn: () => http.get<Me>('/user/me'),
     enabled: isAuthenticated,
     staleTime: 5 * 60_000,
+    refetchInterval: pollMs ?? false,
   })
 }
 

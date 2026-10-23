@@ -1,4 +1,13 @@
-import { ChevronDownIcon, LayoutGridIcon, LogOutIcon, MonitorIcon, MoonIcon, SunIcon, UserIcon } from 'lucide-react'
+import {
+  ChevronDownIcon,
+  HeadsetIcon,
+  LayoutGridIcon,
+  LogOutIcon,
+  MonitorIcon,
+  MoonIcon,
+  SunIcon,
+  UserIcon,
+} from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Link } from 'react-router'
 
@@ -89,6 +98,11 @@ export const UserDropdown = ({ className }: { className?: string }) => {
           <DropdownMenuItem render={<Link to={ROUTES.WORKSPACES} />}>
             <LayoutGridIcon /> Сменить организацию
           </DropdownMenuItem>
+          {me?.capabilities.isPlatformAdmin && (
+            <DropdownMenuItem render={<Link to={ROUTES.SUPPORT} />}>
+              <HeadsetIcon /> Чат поддержки
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator className='bg-mist' />

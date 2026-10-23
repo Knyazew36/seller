@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { Context } from 'telegraf';
 
 import { MessengerUser } from '@/messengers';
 import {
@@ -10,6 +11,7 @@ import {
 
 import { AppMessengerAccountsService } from './app-messenger-accounts.service';
 import { welcomeLinks, welcomeText } from './app-messenger-texts';
+import { TelegramGroupRouter } from './telegram-group-router';
 
 /**
  * Связка модуля Telegram (src/messengers/telegram) с этим проектом: как здесь выдаются сессии,
@@ -20,7 +22,10 @@ import { welcomeLinks, welcomeText } from './app-messenger-texts';
  */
 @Injectable()
 export class AppTelegramAdapter extends TelegramAppAdapter {
-  constructor(private readonly accounts: AppMessengerAccountsService) {
+  constructor(
+    private readonly accounts: AppMessengerAccountsService,
+    private readonly groups: TelegramGroupRouter,
+  ) {
     super();
   }
 
@@ -58,5 +63,15 @@ export class AppTelegramAdapter extends TelegramAppAdapter {
 
   public welcomeLinks(): TelegramLinkButton[] {
     return welcomeLinks();
+  }
+
+  // ── Группы ──────────────────────────────────────────────────────────────
+
+  public onGroupMessage(ctx: Context): Promise<void> {
+    return this.groups.message(ctx);
+  }
+
+  public onGroupCallback(ctx: Context): Promise<boolean> {
+    return this.groups.callback(ctx);
   }
 }

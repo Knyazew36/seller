@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router'
 import { z } from 'zod'
 
 import { useLogin } from '@/entities/session'
+import { MessengerLoginButtons } from '@/features/messengers'
 import { getApiErrorMessage, getApiErrorStatus } from '@/shared/api'
 import { type AuthLocationState, ROUTES } from '@/shared/config/paths'
 import { ErrorText } from '@/shared/ui/kit/ErrorText'
@@ -93,6 +94,7 @@ const LoginPage = () => {
           Войти
         </Button>
       </form>
+      <MessengerLoginButtons />
     </AuthLayout>
   )
 }

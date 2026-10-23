@@ -36,6 +36,8 @@ export interface Me {
   vkId: string | null
   telegramId: string | null
   maxId: string | null
+  /** Открыт ли чат с ботом: без него мессенджер не даёт боту написать первым — уведомления не доходят */
+  messengerDialogs: { telegram: boolean; max: boolean; vk: boolean }
   createdAt: ISODateString
   capabilities: UserCapabilities
   organizations: MeOrganization[]
@@ -51,7 +53,6 @@ export interface AuthResponse {
 export interface MessageResponse {
   message: string
 }
-
 export interface LoginBody {
   email: string
   password: string

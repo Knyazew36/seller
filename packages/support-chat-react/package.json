@@ -1,0 +1,43 @@
+{
+  "name": "@app/support-chat-react",
+  "version": "0.1.0",
+  "private": true,
+  "description": "React-компоненты чата поддержки: виджет посетителя и инбокс оператора. Стили — свой CSS на переменных, без зависимости от UI-кита проекта",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-styles.mjs",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "check-types": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@app/support-chat-client": "0.1.0"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "typescript": "^6"
+  }
+}

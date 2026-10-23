@@ -11,6 +11,7 @@ export const ENTITY_EMOJI = {
   notifications: '🔔',
   auditLog: '📝',
   chat: '💬',
+  support: '🎧',
   marketplaceAccount: '🛒',
 } as const;
 
@@ -24,6 +25,7 @@ const URL_SEGMENT_EMOJI: Record<string, string> = {
   notifications: ENTITY_EMOJI.notifications,
   'audit-log': ENTITY_EMOJI.auditLog,
   'chat-submission': ENTITY_EMOJI.chat,
+  support: ENTITY_EMOJI.support,
   'marketplace-account': ENTITY_EMOJI.marketplaceAccount,
 };
 
